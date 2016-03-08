@@ -1,11 +1,28 @@
 (ns expander
-  (:require [clojure.string :as s])
-  (:use dict))
-
-
+  (:require [clojure.string :as s]
+            db))
 
 ;;## move to separate module
 
-(defn lookup[t]
-  (when-let [r (dic (last t))]
-    (s/join ";" r)))
+(defn help[a]
+  [false "*clover supports following forms:*
+`!help` - for help
+`!explain <term>` or `?<term>` - explain _term_
+`!define <term> . <description>` or `?<term> . <description>` - define _term_ as _description_
+"]
+  )
+(defn format-lookup[t d]
+  (if d
+    (if (next d)
+      (s/join "\n" (cons "*multiple definitions exist:*" (map-indexed #(str (inc %1) " - " %2) d)))
+      (first d))
+    (str "term _" t "_ is not registered (search is case sensitive), you can define it using following form: `?<term> . <definition>`")))
+
+(defn lookup[a]
+  (let [t (last a)
+        [u d] (db/lookup t)]
+    [u (format-lookup t d)]))
+
+(defn teach[a]
+  (let [[u d] (db/teach (second a) (last a))]
+    [u d]))

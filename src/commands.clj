@@ -11,22 +11,22 @@
 
 (def pseudo-bnf-non-terminals [
                 "<term>" "(<word>(?:<white space><word>)*)"
-                "<word>" "(?:[a-zA-Z0-9]+)"
+                "<word>" "(?:[a-zA-Z0-9&-/]+)"
                 "<white space>" "\\s*"
                 "<separator>" "\\."
                 "<description>" "(.+)"])
 
+;;## white space at the end?
 (def pseudo-bnf-terminals
   (list
    ;;help
-;   ["\\!help" identity]
-;   ["\\?" identity]
+   ["\\!help" expander/help]
    ;;explain
-;   ["\\!explain<white space><term>" identity]
-    ["\\?<white space><term>" expander/lookup]
+   ["\\!explain<white space><term>" expander/lookup]
+   ["\\?<white space><term>" expander/lookup]
    ;;define
-;   ["\\!define<white space><term><white space><separator><white space><description>" identity]
-;   ["\\?<white space><term><white space><separator><white space><description>" identity] ;; ## potential confusion for ?define term . abc
+    ["\\!define<white space><term><white space><separator><white space><description>" expander/teach]
+    ["\\?<white space><term><white space><separator><white space><description>" expander/teach] ;; ## potential confusion for ?define term . abc
 ;   ["\\?+<white space><term><white space><separator><white space><description>" identity]
    ;;drop
 ;   ["\\!drop<white space><term><white space><separator><white space><description>" identity]
@@ -41,11 +41,11 @@
 ;   ["\\!seen<white space><term>" identity]
 ;   ["\\!forget<white space><term>" identity]
    ;;Clojure REPL
-   ["\\'(.*)" #(evaluator/evaluate %)]))
+   ["\\'(.*)" #(vector false (evaluator/evaluate %))]))
 
-(def match-map (map #(vector (re-pattern (str "^" (apply replace-several (first %) pseudo-bnf-non-terminals) "$")) (second %)) pseudo-bnf-terminals))
+(def match-map (map #(vector (re-pattern (str "^" (apply replace-several (first %) pseudo-bnf-non-terminals) "$")) (second %) ) pseudo-bnf-terminals))
 
-(defn find [s]
+(defn parse-and-execute [s]
   (if (= "?WF*$" s)
     "Working from Starbucks."
     (some #(when-let [m (re-matches (first %) s)]

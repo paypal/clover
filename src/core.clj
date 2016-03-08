@@ -3,39 +3,59 @@
             [util :as util]
             [evaluator :as evaluator]
             [commands :as commands]
-            [clojure.core.async :as async :refer [>! <! go go-loop]])
+            [persist]
+            [slack-rtm :as sr]
+            [clojure.core.async :as async :refer [>! >!! <! go go-loop]])
   (:import java.lang.Thread)
   (:gen-class))
 
-(defn make-comm [id config]
-  (let [f (util/kw->fn id)]
-    (f config)))
+(def config (config/read-config))
+
+(def comms (atom []))
+
+(defn make-comm []
+  (let [id (:comm config)
+        f (util/kw->fn id)
+        _ (println ":: building com:" (:comm config))
+        fr (f config)]
+    (reset! comms fr)
+    fr
+    ))
+
+(defn send-message [c t]
+  (Thread/sleep 2000);;##tmp
+  (>!! (second @comms) {:channel c :text t} ))
+
+(defn broadcast [t]
+  (doall (map #(send-message % t) (sr/member-of (:api-token config))))
+  )
 
 (defn -main [& args]
-  (let [config (config/read-config)
-        inst-comm (fn []
-                    (println ":: building com:" (:comm config))
-                    (make-comm (:comm config) config))]
-    (println ":: starting with config:" config)
+  (println ":: replying history")
+  (persist/replay (comp commands/parse-and-execute :input))
+  (println ":: starting with config:" config)
 
-    (go-loop [[in out stop] (inst-comm)]
-      #_(println ":: waiting for input")
-      (if-let [form (<! in)]
-        (do
-          (when-let [input (:input form)]
-            (when-let [res (commands/find input)]
-              (println ":: form >> " form)
-              (println ":: => " res)
-              (>! out (assoc form :evaluator/result res :evaluator/channel "D0XXXXXXX"))))
-          (recur [in out stop]))
-        ;; something wrong happened, re init ## that needs some love
-        (do
-          (println ":: WARNING! The comms went down, going to restart.")
-          (stop)
-          (<! (async/timeout 3000))
-          (inst-comm))))
+  (go-loop [[in out stop] (make-comm)]
+    #_(println ":: waiting for input")
+    (if-let [form (<! in)]
+      (do
+        (when-let [input (:input form)]
+          (when-let [[logit? res] (commands/parse-and-execute input)]
+            (when logit?
+              (persist/log form))
+            (println ":: form >> " form)
+            (println ":: => " res)
+            (>! out {:channel (get-in form [:meta :channel]) :text res})
+            ))
+        (recur [in out stop]))
+      ;; something wrong happened, re init ## that needs some love
+      (do
+        (println ":: WARNING! The comms went down, going to restart.");;## really check this
+        (stop)
+        (<! (async/timeout 3000))
+        (recur (make-comm)))));;## contribute to public slack repo
 
-    (.join (Thread/currentThread))))
+  (.join (Thread/currentThread)))
 
 ;;:channel  http://stackoverflow.com/questions/27476313/private-message-slack-user-via-rtm
 ;;

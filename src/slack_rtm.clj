@@ -4,16 +4,31 @@
             [gniazdo.core :as ws]
             [cheshire.core :refer [parse-string generate-string]]))
 
-(def rtm-socket-url "https://slack.com/api/rtm.start")
+(def api-socket-url "https://slack.com/api/")
 
-(defn get-websocket-url [api-token]
-  (let [response (-> (http/get rtm-socket-url
+(defn run-api [api-token method]
+  (let [response (-> (http/get (str api-socket-url method)
                                {:query-params {:token      api-token
                                                :no_unreads true}
                                 :as :json})
                      :body)]
     (when (:ok response)
-      (:url response))))
+      response)))
+
+(defn get-websocket-url [api-token] (:url (run-api api-token "rtm.start")))
+
+(defn in?
+  "true if seq contains elm"
+  [seq elm]
+  (some #(= elm %) seq))
+
+(defn member-of [api-token]
+  (let [me (:user_id (run-api api-token "auth.test"))
+        im (run-api api-token "im.list")
+        gr (run-api api-token "groups.list")
+        ch (run-api api-token "channels.list")
+        all (concat (->> im :ims) (->> gr :groups) (->> ch :channels (filter #(in? (:members %) me))))]
+    (map :id all)))
 
 (defn connect-socket [url]
   (let [in (async/chan)
@@ -62,11 +77,7 @@
 
           (do
             (if (= p cout)
-              (async/>! out {:id (next-id)
-                             :type "message"
-                             ;;:channel (-> v :evaluator/channel)
-                             :channel (get-in v [:meta :channel])
-                             :text    (-> v :evaluator/result)})
+              (async/>! out (assoc v :id (next-id) :type "message"))
               (do
                 #_(println ":: incoming:" v)
                 (when-not (contains? v :reply_to);;## ignore own messages to prevent loops

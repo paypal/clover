@@ -1,4 +1,4 @@
-(defproject CLOVER "0.6.0"
+(defproject CLOVER "0.7.0"
   :description "CLOVER - "
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.8.0"]
@@ -12,6 +12,7 @@
                  [environ "1.0.2"]
                  [stylefruits/gniazdo "0.4.1"]
                  [ring/ring-defaults "0.1.5"]
+                 [throttler "1.0.0"]
                  [http-kit "2.1.19"]]
   :plugins [[lein-ring "0.8.13"]]
   :uberjar-name "CLOVER.jar"
