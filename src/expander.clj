@@ -8,7 +8,7 @@
   [false "*clover supports following forms:*
 `!help` - for help
 `!explain <term>` or `?<term>` - explain _term_
-`!define <term> . <description>` or `?<term> . <description>` - define _term_ as _description_
+`!define <term> = <description>` or `?<term> = <description>` - define _term_ as _description_
 "]
   )
 (defn format-lookup[t d]
@@ -16,7 +16,7 @@
     (if (next d)
       (s/join "\n" (cons "*multiple definitions exist:*" (map-indexed #(str (inc %1) " - " %2) d)))
       (first d))
-    (str "term _" t "_ is not registered (search is case sensitive), you can define it using following form: `?<term> . <definition>`")))
+    (str "term _" t "_ is not registered (search is case sensitive), @clover will try to find the definition for you or type `!help` for more options.")))
 
 (defn lookup[a]
   (let [t (last a)

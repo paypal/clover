@@ -39,8 +39,16 @@
                  (fn [m]
                    (async/put! in (parse-string m true)))
                  :on-error
-                 (fn [_]
-                   (async/close! in)))]
+                 (fn [e]
+                   (println "ERROR:" e)
+                   (flush)
+                   (async/close! in))
+                 :on-close
+                 (fn [c]
+                   (println "CLOSED:" c)
+                   (flush)
+                   (async/close! in))
+                 )]
     (go-loop []
       (let [m (async/<! out)
             s (generate-string m)]
@@ -73,6 +81,7 @@
         (if (nil? v)
           (do
             (println "A channel returned nil, may be its dead? Leaving loop.")
+            (flush)
             (shutdown))
 
           (do

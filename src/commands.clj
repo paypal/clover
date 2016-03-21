@@ -13,7 +13,7 @@
                 "<term>" "(<word>(?:<white space><word>)*)"
                 "<word>" "(?:[a-zA-Z0-9&-/]+)"
                 "<white space>" "\\s*"
-                "<separator>" "\\."
+                "<separator>" "="
                 "<description>" "(.+)"])
 
 ;;## white space at the end?

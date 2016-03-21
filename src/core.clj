@@ -2,7 +2,7 @@
   (:require [config :as config]
             [util :as util]
             [evaluator :as evaluator]
-            [commands :as commands]
+            [commands]
             [persist]
             [slack-rtm :as sr]
             [clojure.core.async :as async :refer [>! >!! <! go go-loop]])
@@ -45,6 +45,7 @@
               (persist/log form))
             (println ":: form >> " form)
             (println ":: => " res)
+            (flush)
             (>! out {:channel (get-in form [:meta :channel]) :text res})
             ))
         (recur [in out stop]))
