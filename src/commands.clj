@@ -47,7 +47,7 @@
 
 (defn parse-and-execute [s]
   (if (= "?WF*$" s)
-    "Working from Starbucks."
+    [false "Working from Starbucks."]
     (some #(when-let [m (re-matches (first %) s)]
              ((second %) m))
           match-map)))

@@ -26,9 +26,10 @@
       (se/superset? ss2 ss1) [s1])))
 
 (defn remove-similar[s]
-  (let [ds (distinct s)
-        red (->> (co/combinations ds 2) (mapcat (partial apply redundant)) distinct set)]
-    (vec (se/difference (set s) red))))
+  (when s
+    (let [ds (distinct s)
+          red (->> (co/combinations ds 2) (mapcat (partial apply redundant)) distinct set)]
+      (vec (se/difference (set s) red)))))
 
 (defn lookup-raw [term]
   [false (@dic (s/lower-case term))])
