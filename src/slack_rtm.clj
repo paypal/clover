@@ -44,8 +44,8 @@
                    (flush)
                    (async/close! in))
                  :on-close
-                 (fn [c]
-                   (println "CLOSED:" c)
+                 (fn [sc reason]
+                   (println "CLOSED:" sc reason)
                    (flush)
                    (async/close! in))
                  )]
@@ -83,7 +83,6 @@
             (println "A channel returned nil, may be its dead? Leaving loop.")
             (flush)
             (shutdown))
-
           (do
             (if (= p cout)
               (async/>! out (assoc v :id (next-id) :type "message"))

@@ -1,5 +1,6 @@
 (ns expander
   (:require [clojure.string :as s]
+            [evaluator]
             db))
 
 ;;## move to separate module
@@ -16,7 +17,7 @@
     (if (next d)
       (s/join "\n" (cons "*multiple definitions exist:*" (map-indexed #(str (inc %1) " - " %2) d)))
       (first d))
-    (str "term _" t "_ is not registered (search is case sensitive), @clover will try to find the definition for you or type `!help` for more options.")))
+    (str "term _" t "_ is not registered (search is case insensitive but the database preserves it), @clover will try to find the definition for you or type `!help` for more options.")))
 
 (defn lookup[a]
   (let [t (last a)
@@ -26,3 +27,5 @@
 (defn teach[a]
   (let [[u d] (db/teach (second a) (last a))]
     [u d]))
+
+(defn evaluate[a] (-> a last evaluator/evaluate))

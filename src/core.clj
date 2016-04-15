@@ -39,15 +39,17 @@
     #_(println ":: waiting for input")
     (if-let [form (<! in)]
       (do
+        ;;(prn ">>>>" form)
         (when-let [input (:input form)]
-          (when-let [[logit? res] (commands/parse-and-execute input)]
-            (when logit?
-              (persist/log form))
-            (println ":: form >> " form)
-            (println ":: => " res)
-            (flush)
-            (>! out {:channel (get-in form [:meta :channel]) :text res})
-            ))
+          (do
+            (when-let [[logit? res] (commands/parse-and-execute input)]
+              (when logit?
+                (persist/log form))
+              (println ":: form >> " form)
+              (println ":: => " res)
+              (flush)
+              (>! out {:channel (get-in form [:meta :channel]) :text res})
+              )))
         (recur [in out stop]))
       ;; something wrong happened, re init ## that needs some love
       (do

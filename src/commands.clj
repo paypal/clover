@@ -1,7 +1,6 @@
 (ns commands
   (:require [clojure.string :as string]
-            [evaluator :as evaluator]
-            [expander :as expander]))
+            [expander]))
 
 ;;move to common
 ;;http://stackoverflow.com/questions/9568050/in-clojure-how-to-write-a-function-that-applies-several-string-replacements
@@ -41,7 +40,7 @@
 ;   ["\\!seen<white space><term>" identity]
 ;   ["\\!forget<white space><term>" identity]
    ;;Clojure REPL
-   ["\\'(.*)" #(vector false (evaluator/evaluate %))]))
+   ["[\\'\u2018](.*)" #(vector false (expander/evaluate %))]))
 
 (def match-map (map #(vector (re-pattern (str "^" (apply replace-several (first %) pseudo-bnf-non-terminals) "$")) (second %) ) pseudo-bnf-terminals))
 
