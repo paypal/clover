@@ -1,5 +1,5 @@
 (ns core
-  (:require [config :as config]
+  (:require [config :as co]
             [util :as util]
             [evaluator :as evaluator]
             [commands]
@@ -9,15 +9,13 @@
   (:import java.lang.Thread)
   (:gen-class))
 
-(def config (config/read-config))
-
 (def comms (atom []))
 
 (defn make-comm []
-  (let [id (:comm config)
+  (let [id (:comm co/config)
         f (util/kw->fn id)
-        _ (println ":: building com:" (:comm config))
-        fr (f config)]
+        _ (println ":: building com:" (:comm co/config))
+        fr (f co/config)]
     (reset! comms fr)
     fr
     ))
@@ -27,13 +25,13 @@
   (>!! (second @comms) {:channel c :text t} ))
 
 (defn broadcast [t]
-  (doall (map #(send-message % t) (sr/member-of (:api-token config))))
+  (doall (map #(send-message % t) (sr/member-of (:api-token co/config))))
   )
 
 (defn -main [& args]
   (println ":: replying history")
   (persist/replay (comp commands/parse-and-execute :input))
-  (println ":: starting with config:" config)
+  (println ":: starting with config:" co/config)
 
   (go-loop [[in out stop] (make-comm)]
     #_(println ":: waiting for input")
@@ -45,8 +43,8 @@
             (when-let [[logit? res] (commands/parse-and-execute input)]
               (when logit?
                 (persist/log form))
-              (println ":: form >> " form)
-              (println ":: => " res)
+              (println "::form>>" (pr-str form))
+              (println "::=> " res)
               (flush)
               (>! out {:channel (get-in form [:meta :channel]) :text res})
               )))

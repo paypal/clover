@@ -1,7 +1,9 @@
 (ns db
-  (:require [clojure.string :as s]
-            [clojure.math.combinatorics :as co]
-            [clojure.set :as se])
+  (:require
+   [config :as co]
+   [clojure.string :as s]
+   [clojure.math.combinatorics :as com]
+   [clojure.set :as se])
   (:use [clojure.algo.generic.functor :only [fmap]])
   )
 
@@ -9,7 +11,7 @@
 
 (defn read-flat-file[f] (->> f slurp s/split-lines (map #(s/split % #"\t" -1))))
 
-(def default-dic (->> ["db/1" "db/2" "db/3" "db/4" "db/5"] (map read-flat-file) (apply concat) (map combine) (group-by (comp s/lower-case first)) (fmap #(->> % (map last) distinct))))
+(def default-dic (->> co/config :db java.io.File. file-seq (filter #(= 1 (count (.getName %)))) (map read-flat-file) (apply concat) (map combine) (group-by (comp s/lower-case first)) (fmap #(->> % (map last) distinct))))
 
 (def dic (atom default-dic))
 
@@ -28,7 +30,7 @@
 (defn remove-similar[s]
   (when s
     (let [ds (distinct s)
-          red (->> (co/combinations ds 2) (mapcat (partial apply redundant)) distinct set)]
+          red (->> (com/combinations ds 2) (mapcat (partial apply redundant)) distinct set)]
       (vec (se/difference (set s) red)))))
 
 (defn lookup-raw [term]
@@ -38,7 +40,7 @@
   [false (remove-similar (@dic (s/lower-case term)))])
 
 (comment
-  (def y (->> @dic (map second) (filter #(< 1 (count %))) (map #(co/combinations % 2))))
+  (def y (->> @dic (map second) (filter #(< 1 (count %))) (map #(com/combinations % 2))))
   (def x (map #(vector (-> % lookup second) (-> % lookup-raw second)) (keys @dic)))
   (defn ss[[s1 s2]] (= (set s1) (set s2)))
   (pprint (remove ss x))

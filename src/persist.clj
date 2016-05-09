@@ -1,9 +1,11 @@
 (ns persist
-  (:require [clojure.string :as s]
-            [clojure.edn :as e]
-            commands))
+  (:require
+   [config :as co]
+   [clojure.string :as s]
+   [clojure.edn :as e]
+   commands))
 
-(def log-file "db/log")
+(def log-file (str (:db co/config) "/log"))
 
 (defn ts[] (.getTime (java.util.Date.)))
 
