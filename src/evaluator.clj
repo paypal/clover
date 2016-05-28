@@ -20,8 +20,8 @@
   (if (:status r)
     (if-not (.startsWith (:output r) "```")
       (str "```"
-         (when-not (.contains (:input r) "_tree:")
-           (str "=> " (:form r) "\n"))
+           (when-not (.contains (:input r) "_tree:")
+             (str "=> " (:form r) "\n"))
          (when-let [o (:output r)]
            o)
          (if-not (nil? (:result r))
@@ -53,7 +53,6 @@
        :result (.getMessage e)})))
 
 (defn evaluate [s] (-> s eval-expr format-result))
-
 
 (defn split-source[s] (clojure.string/split s #";;CUT"))
 

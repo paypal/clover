@@ -25,8 +25,7 @@
   (>!! (second @comms) {:channel c :text t} ))
 
 (defn broadcast [t]
-  (doall (map #(send-message % t) (sr/member-of (:api-token co/config))))
-  )
+  (doall (map #(send-message % t) (sr/member-of (:api-token co/config)))))
 
 (defn -main [& args]
   (println ":: replying history")

@@ -42,7 +42,9 @@
    ;;Clojure REPL
    ["[\\'\u2018](.*)" #(vector false (expander/evaluate %))]))
 
-(def match-map (map #(vector (re-pattern (str "^" (apply replace-several (first %) pseudo-bnf-non-terminals) "$")) (second %) ) pseudo-bnf-terminals))
+(def match-map (map #(vector (re-pattern (str "^" (apply replace-several (first %) pseudo-bnf-non-terminals) "$"))
+                             (second %))
+                    pseudo-bnf-terminals))
 
 (defn parse-and-execute [s]
   (if (= "?WF*$" s)
