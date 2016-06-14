@@ -15,9 +15,11 @@
                  [ring/ring-defaults "0.1.5"]
                  [throttler "1.0.0"]
                  [http-kit "2.1.19"]
+                 [instaparse "1.4.2"]
                  ]
   :plugins [[lein-ring "0.8.13"]]
   :uberjar-name "CLOVER.jar"
   :main core
+  :test-paths ["test"]
   :jvm-opts ["-Djava.security.manager" "-Djava.security.policy==java.policy"]
   :profiles {:uberjar {:aot :all}})

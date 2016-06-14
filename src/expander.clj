@@ -19,11 +19,10 @@
       (first d))
     (str "term _" t "_ is not registered (search is case insensitive but the database preserves it), @clover will try to find the definition for you or type `!help` for more options.")))
 
-(defn lookup[match]
-  (let [term (last match)
-        [u d] (db/lookup term)]
+(defn lookup [term]
+  (let [[u d] (db/lookup term)]
     [u (format-lookup term d)]))
 
-(defn teach[a] (db/teach (second a) (last a)))
+(def teach db/teach)
 
-(defn evaluate[a] (-> a last evaluator/evaluate))
+(def evaluate evaluator/evaluate)

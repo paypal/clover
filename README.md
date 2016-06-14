@@ -31,35 +31,19 @@ will be silent if no matches or the syntax is not correct
 ```
 !define <term> <separator> <description>
 ? <term> <separator> <description>
-?+ <term> <separator> <description>
 ```
 
-- drop definition:
-```
-!drop <term> <separator> <description>
-?- <term> <separator> <description>
-```
-
-- create alias:
-```
-!alias <term> <separator> <term>
-```
-
-- validate, vote up/down:
-```
-!+1 <term> [#]
-!-1 <term> [#]
-```
-- subscription
-```
-!subscribe
-
-!unsubscribe
-
-!seen <term>
-!forget <term>
-```
 ### examples
+
+```
+user   > ?ETA
+
+clover > Estimated Time of Arrival
+
+user   > ?ETA = Event tree analysis
+
+clover > thx for defining term ETA
+```
 
 ## REPL
 ```
@@ -71,9 +55,14 @@ will be silent if no matches or the syntax is not correct
 ## definitions (BNF+Clojure regex)
 
 ```
-<word> ::= #"[a-zA-Z0-9]+"
-<white space> ::= #"\s+"
-<description> ::= #".+$" ;; any ASCII till end of the string
-<term> ::=   <word> { <white space> <word> }
-<separator> ::= "."
+clover-sentence ::= eval | define | explain | help
+help            ::= '!help'
+define          ::= ('?' | '!define') break term break '=' break #'.+'
+explain         ::= ('?' | '!explain') break term break
+term            ::= word space term | word
+space           ::= #'\\s+'
+word            ::= #'[a-zA-Z0-9&-/]+'
+eval            ::= #'[\\'\u2018]' catchall
+break           ::= #'\\s*'
+catchall        ::= #'.*'
 ```
