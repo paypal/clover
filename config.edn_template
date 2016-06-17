@@ -1,5 +1,6 @@
 {:comm :slack-rtm/start
  :api-token "XXX"
+ :throttle-params [30 :minute]
  :port 3000
  :db "db"
 }

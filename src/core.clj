@@ -21,7 +21,7 @@
     ))
 
 (defn send-message [c t]
-  (Thread/sleep 2000);;##tmp
+  (Thread/sleep 200);;to prevent starvation
   (>!! (second @comms) {:channel c :text t} ))
 
 (defn broadcast [t]
