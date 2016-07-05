@@ -58,9 +58,12 @@
     (when (:ok response)
       response)));;TODO remove this !!!!
 
+;;(defn get-websocket-url [api-token] (:url (run-api api-token "rtm.start" {:no_unreads true})))
+;;       (catch Exception e (prn "HTTP GET failed:" e))
 (defn get-websocket-url [api-token]
   (let [rtm-start (run-api-get api-token "rtm.start")]
     [(:url rtm-start) (:self rtm-start) (:users rtm-start)]))
+
 
 (defn in?
   "true if seq contains elm"
@@ -92,6 +95,24 @@
 (defn chat-upload [api-token channels file-name file-content]
   (run-api-post api-token "files.upload" {:channels (s/join "," channels) :filename file-name} file-content))
 
+(comment
+;;this is not reliable way of getting history as the bot might be kicked out
+  (def me (:user_id (run-api t "auth.test")))
+  (def cc (->> (run-api t "channels.list") :channels (filter #(in? (:members %) me))))
+  (def gg (->> (run-api t "groups.list") :groups))
+  (def ii (->> (run-api t "im.list") :ims))
+
+  (def b "1466638527")
+  (def e "1466660400")
+
+  (defn get-i [c] (Thread/sleep 2000)(prn c)(run-api t "im.history" {:channel c :oldest b :latest e}))
+  (defn get-c [c] (Thread/sleep 2000)(prn c)(run-api t "channels.history" {:channel c :oldest b :latest e}))
+  (defn get-g [c] (Thread/sleep 2000)(prn c)(run-api t "groups.history" {:channel c :oldest b :latest e}))
+
+  (def g2 (->> gg (map :id) (map get-g) doall))
+  (def i2 (->> ii (map :id) (map get-i) doall))
+  (def c2 (->> cc (map :id) (map get-c) doall))
+  )
 
 (defn connect-socket [url throttle-params]
   (let [in (async/chan)
