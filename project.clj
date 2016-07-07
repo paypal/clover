@@ -26,5 +26,5 @@
   :uberjar-name "CLOVER.jar"
   :main core
   :test-paths ["test"]
-  :jvm-opts ["-Djava.security.manager" "-Djava.security.policy==java.policy"]
+  :jvm-opts ["-Djava.security.manager" "-Djava.security.policy==java.policy"];; "-Xss226k";;seems to be the smallest possible
   :profiles {:uberjar {:aot :all}})
