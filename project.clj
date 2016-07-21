@@ -16,6 +16,8 @@
                  [ring/ring-defaults "0.1.5"]
                  [throttler "1.0.0"]
                  [http-kit "2.1.19"]
+                 [com.taoensso/timbre "4.4.0"]
+                 [com.draines/postal "1.11.3"]
                  [instaparse "1.4.2"]
                  [reduce-fsm "0.1.4"]
                  [org.clojure/core.cache "0.6.5"]

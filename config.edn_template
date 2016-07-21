@@ -5,4 +5,5 @@
  :db "db"
  :team-id "T<config>"
  :mod-channel "C<config>"
+ :email-log-to ["<config>"]
 }
