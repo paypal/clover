@@ -1,7 +1,11 @@
 
 # build and test 
 ```
+#install sendmail, or "sudo apt-get install sendmail"
+#"cp config.edn_template config.edn" and copy API into the config file
 CONFIG_FILE=config.edn_template lein do clean, test, uberjar
+CONFIG_FILE=config.edn java -Djava.security.manager -Djava.security.policy==java.policy -jar target/CLOVER.jar
+CONFIG_FILE=config.edn java -Djava.security.manager -Djava.security.policy==java.policy -Dclojure.server.repl="{:port 5555 :accept clojure.core.server/repl}" -jar target/CLOVER.jar
 ```
 
 In case of using customized or enterprise version of `saml20-clj` library, it has to be build and installed locally first.

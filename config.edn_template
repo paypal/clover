@@ -6,6 +6,7 @@
  :team-id "T<config>"
  :mod-channel "C<config>"
  :dev-channel "C<config>"
+ :email-log-to ["<config>"]
  ;;echo -n 'login:password' | openssl base64 | sed -e 's/^/Basic /' | tr -d '\n' | shasum
  :hashed-passwords #{"<sha1> <sha1>"}
  :sso2 {:app-name "<app-name>"

@@ -21,6 +21,8 @@
                  [throttler "1.0.0"]
                  [http-kit "2.3.0"]
                  [instaparse "1.4.10"]
+                 [com.taoensso/timbre "4.4.0"]
+                 [com.draines/postal "1.11.3"]
                  [reduce-fsm "0.1.4"]
                  [org.clojure/core.cache "0.7.2"]
                  [digest "1.4.4"]
