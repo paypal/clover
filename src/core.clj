@@ -1,70 +1,60 @@
 (ns core
-  (:require [config :as co]
-            [util :as util]
-            [evaluator :as evaluator]
-            [commands]
-            [persist]
-            [slack-rtm :as sr]
-            [clojure.core.async :as async :refer [>! >!! <! go go-loop]])
+  (:require
+   [clojure.core.async :as async :refer [>! >!! <! go go-loop]]
+   state
+   config
+   util
+   slack-rtm
+   cache)
   (:import java.lang.Thread)
   (:gen-class))
 
 (def comms (atom []))
 
 (defn make-comm []
-  (let [id (:comm co/config)
+  (let [id (:comm config/config)
         f (util/kw->fn id)
-        _ (println ":: building com:" (:comm co/config))
-        fr (f co/config)]
+        _ (println ":: building com:" (:comm config/config))
+        fr (f config/config)]
     (reset! comms fr)
-    fr
-    ))
+    fr))
 
 (defn send-message [c t]
-  (Thread/sleep 200);;to prevent starvation
-  (>!! (second @comms) {:channel c :text t} ))
+  (Thread/sleep 2000)
+  (>!! (second @comms) {:c-dispatch :c-post :c-channel c :c-text t} ))
 
 (defn broadcast [t]
-  (doall (map #(send-message % t) (sr/member-of (:api-token co/config)))))
+  (doall (map #(send-message % t) (slack-rtm/member-of (:api-token config/config)))))
 
 (defn -main [& args]
-  (println ":: replying history")
-  (persist/replay (comp commands/parse-and-execute :input))
-  (println ":: starting with config:" co/config)
-
-  (go-loop [[in out stop] (make-comm)]
-    #_(println ":: waiting for input")
-    (if-let [form (<! in)]
-      (do
-        ;;(prn ">>>>" form)
-        (when-let [input (:input form)]
-          (do
-            (when-let [[logit? res] (commands/parse-and-execute input)]
-              (when logit?
-                (persist/log form))
-              (println "::form>>" (pr-str form))
-              (println "::=> " res)
-              (flush)
-              (>! out {:channel (get-in form [:meta :channel]) :text res})
-              )))
-        (recur [in out stop]))
-      ;; something wrong happened, re init ## that needs some love
-      (do
-        (println ":: WARNING! The comms went down, going to restart.");;## really check this
-        (stop)
-        (<! (async/timeout 3000))
-        (recur (make-comm)))));;## contribute to public slack repo
-
+  (state/restore)
+  (let [dialog-cache (cache/mk-fsm-cache)]
+    (go-loop [[in out stop] (make-comm)]
+      (if-let [rtm-event (<! in)]
+        (do
+          (try
+            (let [fsm-id (state/slack-unique-id rtm-event)]
+              (when-let [[create? fsm-event] (state/process-slack-message! fsm-id rtm-event)]
+                (let [fsm (state/find-fsm! dialog-cache fsm-id)]
+                  (when-let [fsm (if fsm
+                                   fsm
+                                   (if create?
+                                     (state/create-fsm! dialog-cache fsm-id)))]
+                    ;;->this is not atomic
+                    (println ":: accepted1 >>" (pr-str rtm-event))
+                    (doseq [msg (state/run-fsm! fsm-id fsm fsm-event)]
+                      (>! out msg))
+                    ;;<-this is not atomic
+                    ))))
+            (catch Exception e
+              (println "ERROR0:" e rtm-event)))
+          (recur [in out stop])
+          );;if-let do
+        (do ;; something wrong happened, re init ## that needs some love
+          (println ":: WARNING! The comms went down, going to restart.:")
+          (stop)
+          (<! (async/timeout 3000))
+          (recur (make-comm))
+          );;if-let do else
+        )))
   (.join (Thread/currentThread)))
-
-;;:channel  http://stackoverflow.com/questions/27476313/private-message-slack-user-via-rtm
-;;
-;; incoming: {:type message, :channel G0XXXXXXX, :user U0RXXXXXX, :text (+), :ts 1457133934.000002, :team T0XXXXXXX}
-;; form >>  {:input (+), :meta {:type message, :channel G0XXXXXXX, :user U0XXXXXXX, :text (+), :ts 1457133934.000002, :team T0XXXXXXX}}
-
-
-;;add logging and errors
-;;use https://github.com/brunoV/throttler
-
-
-;;handle :: incoming: {:ok false, :reply_to 27, :error {:code -1, :msg slow down, too many messages...}}

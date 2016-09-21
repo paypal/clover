@@ -1,4 +1,4 @@
-(defproject CLOVER "0.7.1"
+(defproject CLOVER "0.8.0"
   :description "CLOVER - "
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.8.0"]
@@ -16,6 +16,8 @@
                  [throttler "1.0.0"]
                  [http-kit "2.1.19"]
                  [instaparse "1.4.2"]
+                 [reduce-fsm "0.1.4"]
+                 [org.clojure/core.cache "0.6.5"]
                  ]
   :plugins [[lein-ring "0.8.13"]]
   :uberjar-name "CLOVER.jar"

@@ -3,20 +3,29 @@
             [clj-http.client :as http]
             [clojure.core.async :as async :refer [go-loop]]
             [gniazdo.core :as ws]
-            [throttler.core :refer [throttle-chan]]))
+            [throttler.core :refer [throttle-chan]]
+            [clojure.core.match :refer [match]])
+  (:use [clojure.algo.generic.functor :only [fmap]]))
 
 (def api-socket-url "https://slack.com/api/")
 
-(defn run-api [api-token method]
-  (let [response (-> (http/get (str api-socket-url method)
-                               {:query-params {:token      api-token
-                                               :no_unreads true}
-                                :as :json})
-                     :body)]
-    (when (:ok response)
-      response)))
+(defn run-api
+  ([api-token method args]
+   (let [response (-> (http/get (str api-socket-url method)
+                                {:query-params (merge {:token      api-token
+                                                       :no_unreads true}
+                                                      args)
+                                 :as :json})
+                      :body)
+         ;;_ (when (not=  "rtm.start" method)(println "DEBUG" (pr-str args response)))
+         ]
+     (when (:ok response);;remove this !!!!
+       response)))
+  ([api-token method] (run-api api-token method {})))
 
-(defn get-websocket-url [api-token] (:url (run-api api-token "rtm.start")))
+(defn get-websocket-url [api-token]
+  (let [rtm-start (run-api api-token "rtm.start")]
+    [(:url rtm-start) (:self rtm-start) (:users rtm-start)]))
 
 (defn in?
   "true if seq contains elm"
@@ -33,6 +42,15 @@
 
 (def buf-size (* 8 1024))
 
+(defn chat-update [api-token ts channel text]
+  (run-api api-token "chat.update" {:ts ts :channel channel :text text}))
+
+(defn chat-delete [api-token ts channel]
+  (run-api api-token "chat.delete" {:ts ts :channel channel}))
+
+(defn user-info [api-token user]
+  (run-api api-token "users.info" {:user user}))
+
 (defn connect-socket [url throttle-params]
   (let [in (async/chan)
         out (async/chan buf-size)
@@ -44,7 +62,7 @@
                    (async/put! in (parse-string m true)))
                  :on-error
                  (fn [e]
-                   (println "ERROR:" e)
+                   (println "ERROR1:" e)
                    (flush)
                    (async/close! in))
                  :on-close
@@ -55,20 +73,48 @@
                  )]
     (go-loop []
       (let [[ts m] (async/<! tout)
+            _ (println ":: outcomming >>>>" (pr-str m))
             delay (- (System/currentTimeMillis) ts)
-            sorry-prefix (when (> delay 999) (println "WARNING: message rate throttling kicked in:" delay) "_Sorry for the delay, clover has been unusually busy_\n")
+            sorry-prefix (when (> delay 2999) (println "WARNING: message rate throttling kicked in:" delay) "_Sorry for the delay, clover has been unusually busy_\n")
             s (generate-string (update-in m [:text] (partial str sorry-prefix)))]
         (ws/send-msg socket s)
         (recur)))
     [in out]))
 
-(defn start [{:keys [api-token throttle-params]}]
+
+(defn- fix-input [team-id rtm]
+  (let [fix1 (if (-> rtm :type (= "message"))
+               (assoc rtm :subtype (:subtype rtm));;nil over absence
+               rtm)
+        fix2 (if (-> rtm :message)
+               (assoc-in fix1 [:message :subtype] (-> rtm :message :subtype))
+               fix1)]
+    (assoc fix2 :team (or (:team fix2) team-id))))
+
+(defn- add-user-info[users-map rtm path]
+  (let [user (get-in rtm path)
+        user-info (users-map user)]
+    (merge rtm (select-keys user-info [:name :real_name]))))
+
+(defn- fix-input-accepted?[team-id add-user-info-f rtm]
+  (when (or (-> rtm :type (= "message")) (:ok rtm));;perhaps unnecessary - optimization
+    (let [fixed-rtm (fix-input team-id rtm)]
+      (match [fixed-rtm];;fix/add non exisitng :subtype, makes matching easier
+             [{:type "message" :subtype nil}] (add-user-info-f fixed-rtm [:user])
+             [{:type "message" :subtype "message_changed" :message {:subtype nil}}] (add-user-info-f fixed-rtm [:message :user])
+             [{:type "message" :subtype "message_deleted"}] fixed-rtm
+             [{:ok _ :reply_to _ :ts _}] fixed-rtm
+             :else nil))))
+
+(defn start [{:keys [api-token throttle-params team-id]}]
   (let [cin (async/chan buf-size)
         cout (async/chan buf-size)
-        url (get-websocket-url api-token)
+        [url self users] (get-websocket-url api-token)
+        users-map (->> users (group-by :id) (fmap first))
+        self-send (fn[m] ((hash-set (-> m :user) (-> m :message :user) (-> m :previous_message :user)) (:id self)))
         counter (atom 0)
-        next-id (fn []
-                  (swap! counter inc))
+        ack-map (atom {})
+        next-id (fn [] (swap! counter inc))
         shutdown (fn []
                    (async/close! cin)
                    (async/close! cout))]
@@ -91,11 +137,34 @@
             (shutdown))
           (do
             (if (= p cout)
-              (async/>! out [(System/currentTimeMillis) (assoc v :id (next-id) :type "message")])
-              (do
-                #_(println ":: incoming:" v)
-                (when-not (contains? v :reply_to);;## ignore own messages to prevent loops
-                  (async/>! cin {:input (:text v) :meta  v}))))
-            (recur [in out])))))
-    [cin cout shutdown]))
+              (condp = (:c-dispatch v)
+                :c-ackpost (let [nid (next-id)
+                             context (:c-context v)
+                             payload {:channel (:c-channel v) :text (:c-text v)}
+                             m (assoc payload :id nid :type "message")]
+                         (swap! ack-map assoc nid {:c-context context :c-payload m})
+                         (async/>! out [(System/currentTimeMillis) m]))
+                :c-post (let [nid (next-id) ;;
+                                m {:id nid :type "message" :channel (:c-channel v) :text (:c-text v)}]
+                            (async/>! out [(System/currentTimeMillis) m]))
+                :c-update (chat-update api-token (:c-ts v) (:c-channel v) (:c-text v))
+                :c-delete (chat-delete api-token (:c-ts v) (:c-channel v))
+                nil)
 
+              (when-let[vv (fix-input-accepted? team-id (partial add-user-info users-map) v)]
+                (let [rto (vv :reply_to)
+                      #_(println ":: incomming <<<<:" (pr-str v))]
+                  (if-not rto
+                    (if-not (self-send vv)
+                      (async/>! cin vv)
+                      #_(println "IGNORING:" (pr-str v)))
+                    (if-let [m (@ack-map rto)]
+                      (do
+                        (async/>! cin (assoc m :type "message" :subtype "message_sent" :reply vv))
+                        (swap! ack-map dissoc rto))
+                      #_(println "ERROR2:" (pr-str rto))
+                      ))))
+              )
+            (recur [in out]))
+          )))
+    [cin cout shutdown]))

@@ -1,0 +1,1 @@
+{:ts 1474383549789, :entry {:command :define, :args {:term "lol", :definition "There are probably other meanings too2"}, :event {:type "message", :channel "G0XXXXXXX", :user "U0XXXXXXX", :text "?lol=There are probably other meanings too", :ts "1474383549.000026", :team "T0XXXXXXX"}}}

@@ -1,9 +1,9 @@
 (ns db
   (:require
-   [config :as co]
    [clojure.string :as s]
    [clojure.math.combinatorics :as com]
-   [clojure.set :as se])
+   [clojure.set :as se]
+   config)
   (:use [clojure.algo.generic.functor :only [fmap]])
   )
 
@@ -16,7 +16,7 @@
        (map #(s/split % #"\t" -1))))
 
 (def default-dic
-  (->> co/config
+  (->> config/config
        :db
        java.io.File.
        file-seq(filter #(= 1 (count (.getName %))))
@@ -29,8 +29,7 @@
 (def dic (atom default-dic))
 
 (defn teach [term definition]
-  (swap! dic update (s/lower-case term) #(conj % definition))
-  [true (str "thx for defining term _" term "_")])
+  (swap! dic update (s/lower-case term) #(conj % definition)))
 
 (defn split-lowercase-etc[s] (->> (s/split s #"[^A-Za-z0-9]") (remove empty?) (map s/lower-case) set))
 
@@ -51,10 +50,10 @@
       (vec (se/difference (set s) red)))))
 
 (defn lookup-raw [term]
-  [false (@dic (s/lower-case term))])
+  (@dic (s/lower-case term)))
 
 (defn lookup [term]
-  [false (remove-similar (@dic (s/lower-case term)))])
+  (remove-similar (@dic (s/lower-case term))))
 
 (comment
   (def y (->> @dic (map second) (filter #(< 1 (count %))) (map #(com/combinations % 2))))

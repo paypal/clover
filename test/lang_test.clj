@@ -1,5 +1,5 @@
-(ns commands-test
-    (:require [commands :as cmd])
+(ns lang-test
+    (:require [lang :as cmd])
     (:use clojure.test))
 
 ;; Util function working with tree
