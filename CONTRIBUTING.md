@@ -7,3 +7,7 @@
  6. tests defined [here](TESTING.md) performed and test suite update if possible
  7. [design doc](DESIGN.md) updated and code commented (N/A yet, WIP)
 
+
+TODO bump version
+
+change log file
