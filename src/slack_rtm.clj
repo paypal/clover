@@ -4,12 +4,13 @@
             [clojure.core.async :as async :refer [go-loop]]
             [gniazdo.core :as ws]
             [throttler.core :refer [throttle-chan]]
-            [clojure.core.match :refer [match]])
+            [clojure.core.match :refer [match]]
+            [clojure.string :as s])
   (:use [clojure.algo.generic.functor :only [fmap]]))
 
 (def api-socket-url "https://slack.com/api/")
 
-(defn run-api
+(defn run-api-get
   ([api-token method args]
    (let [response (-> (http/get (str api-socket-url method)
                                 {:query-params (merge {:token      api-token
@@ -19,12 +20,24 @@
                       :body)
          ;;_ (when (not=  "rtm.start" method)(println "DEBUG" (pr-str args response)))
          ]
-     (when (:ok response);;remove this !!!!
+     (when (:ok response)
        response)))
-  ([api-token method] (run-api api-token method {})))
+  ([api-token method] (run-api-get api-token method {})))
+
+(defn run-api-post
+  [api-token method args file-content]
+  (let [response (-> (http/post (str api-socket-url method)
+                                {:query-params (merge {:token      api-token
+                                                       :no_unreads true}
+                                                      args)
+                                 :as :json
+                                 :multipart [{:name "file" :content file-content}]})
+                     :body)]
+    (when (:ok response)
+      response)))
 
 (defn get-websocket-url [api-token]
-  (let [rtm-start (run-api api-token "rtm.start")]
+  (let [rtm-start (run-api-get api-token "rtm.start")]
     [(:url rtm-start) (:self rtm-start) (:users rtm-start)]))
 
 (defn in?
@@ -32,24 +45,31 @@
   [seq elm]
   (some #(= elm %) seq))
 
-(defn member-of [api-token]
-  (let [me (:user_id (run-api api-token "auth.test"))
-        im (run-api api-token "im.list")
-        gr (run-api api-token "groups.list")
-        ch (run-api api-token "channels.list")
-        all (concat (->> im :ims) (->> gr :groups) (->> ch :channels (filter #(in? (:members %) me))))]
-    (map :id all)))
+(defn member-of-im [api-token] (-> (run-api-get api-token "auth.test") :user_id))
+
+(defn member-of-groups [api-token] (->> (run-api-get api-token "groups.list") :groups))
+
+(defn member-of-channels [api-token]
+  (let [me (:user_id (run-api-get api-token "auth.test"))
+        ch (run-api-get api-token "channels.list")]
+    (->> ch :channels (filter #(in? (:members %) me)))))
+
+(defn member-of [api-token] (->> [member-of-im member-of-groups member-of-channels] (map #(% api-token)) (mapcat :id)))
 
 (def buf-size (* 8 1024))
 
 (defn chat-update [api-token ts channel text]
-  (run-api api-token "chat.update" {:ts ts :channel channel :text text}))
+  (run-api-get api-token "chat.update" {:ts ts :channel channel :text text}))
 
 (defn chat-delete [api-token ts channel]
-  (run-api api-token "chat.delete" {:ts ts :channel channel}))
+  (run-api-get api-token "chat.delete" {:ts ts :channel channel}))
 
 (defn user-info [api-token user]
-  (run-api api-token "users.info" {:user user}))
+  (run-api-get api-token "users.info" {:user user}))
+
+(defn chat-upload [api-token channels file-name file-content]
+  (run-api-post api-token "files.upload" {:channels (s/join "," channels) :filename file-name} file-content))
+
 
 (defn connect-socket [url throttle-params]
   (let [in (async/chan)
