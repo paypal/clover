@@ -33,36 +33,39 @@
 (defn broadcast [t]
   (doall (map #(send-message % t) (slack-rtm/member-of (:api-token config/config)))))
 
+(defn process-find-and-run[slack-unique-id process-slack-message! dialog-cache rtm-event]
+  (let [fsm-id (slack-unique-id rtm-event)]
+    (when-let [[create? fsm-name fsm-event] (process-slack-message! fsm-id rtm-event)]
+      (let [fsm (state/find-fsm! dialog-cache fsm-id)
+            _ (prn "===RUN===" fsm-id fsm-name fsm-event fsm)]
+        (when-let [fsm (if fsm
+                         fsm
+                         (if create?
+                           (state/create-fsm! fsm-name dialog-cache fsm-id)))]
+          [fsm fsm-name fsm-id fsm-event])))))
+
+(def fsms [(partial process-find-and-run state/slack-unique-id state/process-slack-message!)])
+
 (defn -main [& args]
   (state/restore)
   (let [dialog-cache (cache/mk-fsm-cache)
         main-loop (go-loop [[in out stop] (make-comm)]
                     (if-let [rtm-event (<! in)]
                       (do
-                        (try
-                          (let [fsm-id (state/slack-unique-id rtm-event)]
-                            (when-let [[create? fsm-event] (state/process-slack-message! fsm-id rtm-event)]
-                              (let [fsm (state/find-fsm! dialog-cache fsm-id)]
-                                (when-let [fsm (if fsm
-                                                 fsm
-                                                 (if create?
-                                                   (state/create-fsm! dialog-cache fsm-id)))]
-                                  ;;->this is not atomic
-                                  (println ":: accepted1 >>" (pr-str rtm-event))
-                                  (doseq [msg (state/run-fsm! fsm-id fsm fsm-event)]
-                                    (>! out msg))
-                                  ;;<-this is not atomic
-                                  ))))
+                        (try ;;->this is not atomic
+                          (when-let [[fsm fsm-name fsm-id fsm-event] (some #(% dialog-cache rtm-event) fsms)]
+                            (println ":: accepted1 >>" (pr-str fsm-name rtm-event))
+                            ;;TODO! add protection against resending same action in case FSM did not accept event
+                            (doseq [msg (state/run-fsm! fsm-name fsm-id fsm fsm-event)]
+                              (>! out msg)))
                           (catch Exception e
-                            (println "ERROR0:" e rtm-event)))
-                        (recur [in out stop])
-                        );;if-let do
+                            (println "ERROR0:" e rtm-event)));;<-this is not atomic ;;TODO! add str repr                        
+                        (recur [in out stop]))
                       (do ;; something wrong happened, re init ## that needs some love
                         (println ":: WARNING! The comms went down, going to restart.")
                         (stop)
                         (<! (async/timeout 3000))
-                        (recur (make-comm*))
-                        );;if-let do else
+                        (recur (make-comm*)))
                       ))]
     (<!! main-loop)
     (shutdown-agents)

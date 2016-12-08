@@ -59,6 +59,8 @@
    ]
   )
 
-(defn mk-sm-core[] (atom (sm-core [])))
+(def fsm-m {:sm-core sm-core})
+(defn gt-sm[fsm-name] (fsm-m fsm-name))
+(defn mk-sm[fsm-name] (atom ((gt-sm fsm-name) [])))
 
 (defn run-fsm![c-fsm c-event] (swap! c-fsm fsm/fsm-event c-event))
