@@ -21,7 +21,7 @@
          ;;_ (when (not=  "rtm.start" method)(println "DEBUG" (pr-str args response)))
          ]
      (when-not (:ok response)
-       (println "ERROR3:" response))
+       (println "ERROR3:" response "for" method "and" args))
      (when (:ok response)
        response)))
   ([api-token method] (run-api-get api-token method {})))
