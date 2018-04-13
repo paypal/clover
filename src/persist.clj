@@ -4,7 +4,8 @@
    [clojure.string :as s]
    [clojure.edn :as e]
    lang
-   db))
+   db
+   c))
 
 (def log-file-legacy-1 (str (:db co/config) "/log"))
 
@@ -26,13 +27,13 @@
 (def log-response (partial append-to response-file))
 
 (defn- replaying-legacy-1 [e]
-  (println "replaying legacy:" e)
+  (c/intln "replaying legacy:" e)
   (let [{{:keys [term definition]} :args} (lang/parse (-> e :entry :input))]
     (when definition
       (db/teach term definition))))
 
 (defn- replaying-2 [e]
-  (println "replaying:" e)
+  (c/intln "replaying:" e)
   (let [{:keys [term definition]} (-> e :entry :args)]
     (db/teach term definition)))
 

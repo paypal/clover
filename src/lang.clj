@@ -1,6 +1,7 @@
 (ns lang
   (:require [clojure.string :as s]
-            [instaparse.core :as insta]))
+            [instaparse.core :as insta]
+            c))
 
 (def format-help
   ".
@@ -62,6 +63,6 @@
     (let [tree (read-clover-lang s)]
       (if (insta/failure? tree)
         (do
-          (println ">>> Insta parse failure: " (pr-str tree))
+          (c/intln ">>> Insta parse failure: " (pr-str tree))
           nil)
         (eval-stage tree)))))

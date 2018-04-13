@@ -5,7 +5,8 @@
             [gniazdo.core :as ws]
             [throttler.core :refer [throttle-chan]]
             [clojure.core.match :refer [match]]
-            [clojure.string :as s])
+            [clojure.string :as s]
+            c)
   (:use [clojure.algo.generic.functor :only [fmap]]))
 
 (def api-socket-url "https://slack.com/api/")
@@ -18,10 +19,10 @@
                                                       args)
                                  :as :json})
                       :body)
-         ;;_ (when (not=  "rtm.start" method)(println "DEBUG" (pr-str args response)))
+         ;;_ (when (not=  "rtm.start" method)(c/intln "DEBUG" (pr-str args response)))
          ]
      (when-not (:ok response)
-       (println "ERROR3:" response))
+       (c/intln "ERROR3:" response))
      (when (:ok response)
        response)))
   ([api-token method] (run-api-get api-token method {})))
@@ -36,9 +37,9 @@
                                  :multipart [{:name "file" :content file-content}]})
                      :body)]
     (when-not (:ok response)
-       (println "ERROR4:" response))
+      (c/intln "ERROR4:" response))
     (when (:ok response)
-      response)))
+      response)));;TODO remove this !!!!
 
 (defn get-websocket-url [api-token]
   (let [rtm-start (run-api-get api-token "rtm.start")]
@@ -86,20 +87,20 @@
                    (async/put! in (parse-string m true)))
                  :on-error
                  (fn [e]
-                   (println "ERROR1:" e)
+                   (c/intln "ERROR1:" e)
                    (flush)
                    (async/close! in))
                  :on-close
                  (fn [sc reason]
-                   (println "CLOSED:" sc reason)
+                   (c/intln "CLOSED:" sc reason)
                    (flush)
                    (async/close! in))
                  )]
     (go-loop []
       (let [[ts m] (async/<! tout)
-            _ (println ":: outcomming >>>>" (pr-str m))
+            _ (c/intln ":: outcomming >>>>" (pr-str m))
             delay (- (System/currentTimeMillis) ts)
-            sorry-prefix (when (> delay 2999) (println "WARNING: message rate throttling kicked in:" delay) "_Sorry for the delay, clover has been unusually busy_\n")
+            sorry-prefix (when (> delay 2999) (c/intln "WARNING: message rate throttling kicked in:" delay) "_Sorry for the delay, clover has been unusually busy_\n")
             s (generate-string (update-in m [:text] (partial str sorry-prefix)))]
         (ws/send-msg socket s)
         (recur)))
@@ -133,7 +134,9 @@
 (defn start [{:keys [api-token throttle-params team-id]}]
   (let [cin (async/chan buf-size)
         cout (async/chan buf-size)
+        _ (c/intln ":: start:1")
         [url self users] (get-websocket-url api-token)
+        _ (c/intln ":: start:2")
         users-map (->> users (group-by :id) (fmap first))
         self-send (fn[m] ((hash-set (-> m :user) (-> m :message :user) (-> m :previous_message :user)) (:id self)))
         counter (atom 0)
@@ -143,10 +146,10 @@
                    (async/close! cin)
                    (async/close! cout))]
     (when (clojure.string/blank? url)
-      (println ":: start:Could not get RTM Websocket URL")
+      (c/intln ":: start:Could not get RTM Websocket URL")
       (throw (ex-info "Could not get RTM Websocket URL" {})))
 
-    (println ":: got websocket url:" url)
+    (c/intln ":: got websocket url:" url)
 
     ;; start a loop to process messages
     (go-loop [[in out socket] (connect-socket url throttle-params)]
@@ -157,7 +160,7 @@
         ;; we should do something smarter, may be try and reconnect
         (if (nil? v)
           (do
-            (println "A channel returned nil, may be its dead? Leaving loop.")
+            (c/intln "A channel returned nil, may be its dead? Leaving loop.")
             (ws/close socket)
             (flush)
             (shutdown))
@@ -179,16 +182,16 @@
 
               (when-let[vv (fix-input-accepted? team-id (partial add-user-info users-map) v)]
                 (let [rto (vv :reply_to)
-                      #_(println ":: incomming <<<<:" (pr-str v))]
+                      #_(c/intln ":: incomming <<<<:" (pr-str v))]
                   (if-not rto
                     (if-not (self-send vv)
                       (async/>! cin vv)
-                      #_(println "IGNORING:" (pr-str v)))
+                      #_(c/intln "IGNORING:" (pr-str v)))
                     (if-let [m (@ack-map rto)]
                       (do
                         (async/>! cin (assoc m :type "message" :subtype "message_sent" :reply vv))
                         (swap! ack-map dissoc rto))
-                      #_(println "ERROR2:" (pr-str rto))
+                      #_(c/intln "ERROR2:" (pr-str rto))
                       ))))
               )
             (recur [in out socket]))

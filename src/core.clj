@@ -6,7 +6,8 @@
    config
    util
    slack-rtm
-   cache)
+   cache
+   c)
   (:import java.lang.Thread)
   (:gen-class))
 
@@ -15,8 +16,10 @@
 (defn make-comm []
   (let [id (:comm config/config)
         f (util/kw->fn id)
-        _ (println ":: building com:" (:comm config/config))
-        fr (f config/config)]
+        _ (c/intln ":: building com:1" (:comm config/config))
+        fr (f config/config)
+        _ (c/intln ":: building com:2" (:comm config/config))
+        ]
     (reset! comms fr)
     fr))
 
