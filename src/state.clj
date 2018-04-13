@@ -7,7 +7,8 @@
    lang
    evaluator
    persist
-   cache))
+   cache
+   c))
 
 ;;
 ;;
@@ -109,10 +110,11 @@
       (atom (apply dialogs/sm-core (read-string (slurp fsm-file)))))))
 
 (defn run-fsm![fsm-id fsm fsm-event]
-  (println ":: accepted2 >>" (pr-str fsm-id) "-for->" (pr-str fsm-event))
+  (c/intln ":: accepted2 >>" (pr-str fsm-id) "-for->" (pr-str fsm-event))
   (dialogs/run-fsm! fsm fsm-event)
   (save-fsm fsm-id fsm)
-  (println ":: after:" (pr-str @fsm) " -with- " (pr-str (-> @fsm :value last)))
+  (c/intln ":: after:" (pr-str @fsm) " -with- " (pr-str (-> @fsm :value last)))
+  ;;TODO  might need to add context to all like it used to be (assoc (-> @fsm :value last) :c-context fsm-event)
   (-> @fsm :value last :c-actions))
 
 (defn create-fsm! [cache fsm-key] (cache/cache-fsm! cache fsm-key (dialogs/mk-sm-core)))
@@ -123,8 +125,8 @@
 ;;
 ;;
 (defn restore[]
-  (println ":: replaying legacy history:")
+  (c/intln ":: replaying legacy history:")
   (persist/replay-legacy-1)
-  (println ":: replaying history:")
+  (c/intln ":: replaying history:")
   (persist/replay-2)
-  (println ":: starting with config:" config/config))
+  (c/intln ":: starting with config:" config/config))
