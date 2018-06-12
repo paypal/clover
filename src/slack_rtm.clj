@@ -27,6 +27,22 @@
        response)))
   ([api-token method] (run-api-get api-token method {})))
 
+(defn run-api-get2
+  [api-token method args]
+  (let [response (-> (http/get (str api-socket-url method)
+                               {:query-params (merge {:token      api-token
+                                                      :no_unreads true}
+                                                     args)
+                                :as :json})
+                     :body)
+        ;;_ (when (not=  "rtm.start" method)(println "DEBUG" (pr-str args response)))
+        ]
+    response
+    )
+  )
+
+
+
 (defn run-api-post
   [api-token method args file-content]
   (let [response (-> (http/post (str api-socket-url method)
