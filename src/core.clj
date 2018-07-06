@@ -40,6 +40,7 @@
   (state/restore)
   (let [dialog-cache (cache/mk-fsm-cache)
         main-loop (go-loop [[in out stop] (make-comm)]
+                    (c/intln "IN GOOOOOO BLOCK" in out stop)
                     (if-let [rtm-event (<! in)]
                       (do
                         (try
@@ -51,24 +52,32 @@
                                                  (if create?
                                                    (state/create-fsm! dialog-cache fsm-id)))]
                                   ;;->this is not atomic
-                                  (println ":: accepted1 >>" (pr-str rtm-event))
+                                  (c/intln ":: accepted1 >>" (pr-str rtm-event))
                                   (doseq [msg (state/run-fsm! fsm-id fsm fsm-event)]
                                     (>! out msg))
                                   ;;<-this is not atomic
                                   ))))
                           (catch Exception e
-                            (println "ERROR0:" e rtm-event)))
+                            (c/intln "ERROR0:" e rtm-event)));;TODO! add str repr
                         (recur [in out stop])
                         );;if-let do
                       (do ;; something wrong happened, re init ## that needs some love
-                        (println ":: WARNING! The comms went down, going to restart.")
+                        (c/intln ":: WARNING! The comms went down, going to restart.:1");;##TODO really check this
                         (stop)
+                        (c/intln ":: WARNING! The comms went down, going to restart.:2");;##TODO really check this
                         (<! (async/timeout 3000))
-                        (recur (make-comm*))
+                        (c/intln ":: WARNING! The comms went down, going to restart.:3");;##TODO really check this
+                        (let [xx (make-comm*)]
+                          (c/intln "xxxxxxxxxx" xx)
+                          (recur xx))
                         );;if-let do else
                       ))]
     main-loop))
 
 (defn -main [& args]
+  (c/intln "ALLLLLLLMOST")
   (<!! (clover))
-  (shutdown-agents))
+  (c/intln "DOOOOOOOOONE")
+  (shutdown-agents)
+  (c/intln "DOOOOOOOOONE FOR REAL")
+)

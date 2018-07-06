@@ -17,7 +17,8 @@
                                 {:query-params (merge {:token      api-token
                                                        :no_unreads true}
                                                       args)
-                                 :as :json})
+                                 :as :json
+                                 :debug true :debug-body true})
                       :body)
          ;;_ (when (not=  "rtm.start" method)(c/intln "DEBUG" (pr-str args response)))
          ]
@@ -112,7 +113,7 @@
                    (flush)
                    (async/close! in))
                  )]
-    (go-loop []
+    #_(go-loop []
       (let [[ts m] (async/<! tout)
             _ (c/intln ":: outcomming >>>>" (pr-str m))
             delay (- (System/currentTimeMillis) ts)
@@ -168,7 +169,7 @@
     (c/intln ":: got websocket url:" url)
 
     ;; start a loop to process messages
-    (go-loop [[in out socket] (connect-socket url throttle-params)]
+    (go-loop [[in out ss] (connect-socket url throttle-params)]
       ;; get whatever needs to be done for either data coming from the socket
       ;; or from the user
       (let [[v p] (async/alts! [cout in])]
@@ -176,8 +177,8 @@
         ;; we should do something smarter, may be try and reconnect
         (if (nil? v)
           (do
-            (c/intln "A channel returned nil, may be its dead? Leaving loop.")
-            (ws/close socket)
+            (c/intln "A channel returned nil, may be its dead? Leaving loop." (= p cout) (= p in))
+            (ws/close ss)
             (flush)
             (shutdown))
           (do
@@ -210,6 +211,6 @@
                       #_(c/intln "ERROR2:" (pr-str rto))
                       ))))
               )
-            (recur [in out socket]))
+            (recur [in out ss]))
           )))
     [cin cout shutdown]))
