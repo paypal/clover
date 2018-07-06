@@ -20,6 +20,8 @@
                       :body)
          ;;_ (when (not=  "rtm.start" method)(println "DEBUG" (pr-str args response)))
          ]
+     (when-not (:ok response)
+       (println "ERROR3:" response))
      (when (:ok response)
        response)))
   ([api-token method] (run-api-get api-token method {})))
@@ -33,6 +35,8 @@
                                  :as :json
                                  :multipart [{:name "file" :content file-content}]})
                      :body)]
+    (when-not (:ok response)
+       (println "ERROR4:" response))
     (when (:ok response)
       response)))
 
@@ -99,7 +103,7 @@
             s (generate-string (update-in m [:text] (partial str sorry-prefix)))]
         (ws/send-msg socket s)
         (recur)))
-    [in out]))
+    [in out socket]))
 
 
 (defn- fix-input [team-id rtm]
@@ -139,12 +143,13 @@
                    (async/close! cin)
                    (async/close! cout))]
     (when (clojure.string/blank? url)
+      (println ":: start:Could not get RTM Websocket URL")
       (throw (ex-info "Could not get RTM Websocket URL" {})))
 
     (println ":: got websocket url:" url)
 
     ;; start a loop to process messages
-    (go-loop [[in out] (connect-socket url throttle-params)]
+    (go-loop [[in out socket] (connect-socket url throttle-params)]
       ;; get whatever needs to be done for either data coming from the socket
       ;; or from the user
       (let [[v p] (async/alts! [cout in])]
@@ -153,6 +158,7 @@
         (if (nil? v)
           (do
             (println "A channel returned nil, may be its dead? Leaving loop.")
+            (ws/close socket)
             (flush)
             (shutdown))
           (do
@@ -185,6 +191,6 @@
                       #_(println "ERROR2:" (pr-str rto))
                       ))))
               )
-            (recur [in out]))
+            (recur [in out socket]))
           )))
     [cin cout shutdown]))
