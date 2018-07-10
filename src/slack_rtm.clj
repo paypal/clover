@@ -197,6 +197,7 @@
           )))
     [cin cout shutdown]))
 
+;;TODO perhaps moving throttling to start/go-loop is better so msg will never get out of order to dispatch, or delegate dispatch one step further
 ;;TODO add retry for FSM without confirmation
 
 ;;TODO read only mode where clover reports what would be accepted
