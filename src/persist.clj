@@ -8,6 +8,7 @@
 
 (def log-file-legacy-1 (str (:db co/config) "/log"))
 
+;;TODO review DB files, it crashes if there is no log2
 (def log-file-2 (str (:db co/config) "/log2"))
 
 (def use-file (str (:db co/config) "/use"))
@@ -25,6 +26,7 @@
 
 (def log-response (partial append-to response-file))
 
+;;TODO convert db/* and logs/* into FSM
 (defn- replaying-legacy-1 [e]
   (println "replaying legacy:" e)
   (let [{{:keys [term definition]} :args} (lang/parse (-> e :entry :input))]

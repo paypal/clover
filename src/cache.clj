@@ -5,7 +5,7 @@
 
 (defn mk-fsm-cache[]
   (-> {}
-      (c/fifo-cache-factory :threshold 1024)
+      (c/fifo-cache-factory :threshold 1024) ;; TODO 2 config
       (c/ttl-cache-factory  :ttl 60000)
       atom))
 

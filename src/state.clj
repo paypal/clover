@@ -46,15 +46,22 @@
 ;;
 ;;
 
+;;TODO "message_sent" make when c-fsm else warning
+;;TODO "message_changed" make when c-fsm is not found, usecase somebody changes past message to clover, should we remove if parsed is nil
+;;TODO "message_deleted" make when c-fsm is not found, usecase somebody changes past message to clover
+
+
+;;TODO channel not used now - explain why
 (defn- slack-unique-id-selector [rtm-event] (mapv rtm-event [:type :subtype]))
 (defmulti slack-unique-id slack-unique-id-selector)
 
 (defmethod slack-unique-id ["message" nil] [rtm-event]
   (select-keys rtm-event [:user :ts :team]))
 
+;;TODO comment why it is that
 (defmethod slack-unique-id ["message" "message_sent"] [rtm-event]
   (let [{context :c-context payload :c-payload} rtm-event]
-    (slack-unique-id (:rtm-event context))))
+    (slack-unique-id (:rtm-event context))));;TODO consider keeping key in the context rather than full message
 
 (defmethod slack-unique-id ["message" "message_changed"] [rtm-event]
   (let [{message :message} rtm-event]
@@ -96,8 +103,11 @@
 ;;
 (def fsm-dir (str (:db config/config) "/dialogs/"))
 
+;;TODO check if all non nil, log error
 (defn- fsm-file [fsm-key] (io/as-file (str fsm-dir (:ts fsm-key) "-" (:team fsm-key) "-" (:user fsm-key))))
 
+;;TODO save type of dialog as well, isterminated as well
+;;TODO add error handling
 (defn- save-fsm [fsm-key c-fsm]
   (let [fsm-file (fsm-file fsm-key)
         content (with-out-str (pr [(:state @c-fsm) (:value @c-fsm)]))]
@@ -113,11 +123,16 @@
   (dialogs/run-fsm! fsm fsm-event)
   (save-fsm fsm-id fsm)
   (println ":: after:" (pr-str @fsm) " -with- " (pr-str (-> @fsm :value last)))
+  ;;TODO  might need to add context to all like it used to be (assoc (-> @fsm :value last) :c-context fsm-event)
   (-> @fsm :value last :c-actions))
 
 (defn create-fsm! [cache fsm-key] (cache/cache-fsm! cache fsm-key (dialogs/mk-sm-core)))
 
 (def find-fsm! (partial cache/through!* load-fsm)) ;;takes [cache fsm-key]
+
+;;TODO really test ^^^^^ cache
+;;TODO hot swappable FSM :-)
+;;TODO and now finilize/unregister FSM if deleted, or let it expire in cache since nobody will reach it again
 
 ;;
 ;;

@@ -106,6 +106,7 @@
     [in out socket]))
 
 
+;;TODO hardcoded team, not all messages come with :team :-( take from coreasync channel
 (defn- fix-input [team-id rtm]
   (let [fix1 (if (-> rtm :type (= "message"))
                (assoc rtm :subtype (:subtype rtm));;nil over absence
@@ -135,9 +136,9 @@
         cout (async/chan buf-size)
         [url self users] (get-websocket-url api-token)
         users-map (->> users (group-by :id) (fmap first))
-        self-send (fn[m] ((hash-set (-> m :user) (-> m :message :user) (-> m :previous_message :user)) (:id self)))
+        self-send (fn[m] ((hash-set (-> m :user) (-> m :message :user) (-> m :previous_message :user)) (:id self)));;TODO dispatch on type really
         counter (atom 0)
-        ack-map (atom {})
+        ack-map (atom {}) ;;TODO make it TTLed to prevent memory fill up;; recreate it from methods (ambitious);; perhaps it is okay to not to persit it as chances of losing ack are minimal
         next-id (fn [] (swap! counter inc))
         shutdown (fn []
                    (async/close! cin)
@@ -163,6 +164,7 @@
             (shutdown))
           (do
             (if (= p cout)
+              ;;TODO consider trade-off-s between using websockets to methods for sending messages
               (condp = (:c-dispatch v)
                 :c-ackpost (let [nid (next-id)
                              context (:c-context v)
@@ -194,3 +196,7 @@
             (recur [in out socket]))
           )))
     [cin cout shutdown]))
+
+;;TODO add retry for FSM without confirmation
+
+;;TODO read only mode where clover reports what would be accepted
