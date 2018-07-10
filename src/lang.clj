@@ -2,6 +2,8 @@
   (:require [clojure.string :as s]
             [instaparse.core :as insta]))
 
+;;TODO generate it of instaparse grammar
+
 (def format-help
   ".
 *following forms are supported:*
@@ -42,6 +44,8 @@
      noop = catchall
      break = #'\\s*'
      catchall = #'([\\s\\S])*'"))
+
+;;TODO add (= "?WF*$" s) [false "Working from Starbucks."] -> reqs
 
 (def eval-stage
   (partial insta/transform {

@@ -27,9 +27,10 @@
 (defn make-comm* [& args] (p/retry {} (p/retriable {:catch [Exception] :ex-wrapper ex-wrapper} (apply make-comm args))))
 
 (defn send-message [c t]
-  (Thread/sleep 2000)
+  (Thread/sleep 2000);;TODO use lower prio #
   (>!! (second @comms) {:c-dispatch :c-post :c-channel c :c-text t} ))
 
+;;TODO remove older inquires after timeout
 (defn broadcast [t]
   (doall (map #(send-message % t) (slack-rtm/member-of (:api-token config/config)))))
 
@@ -48,6 +49,10 @@
                                                  (if create?
                                                    (state/create-fsm! dialog-cache fsm-id)))]
                                   ;;->this is not atomic
+                                  ;;TODO make a channel of it
+                                  ;;consider crash case and hanging FSMs
+                                  ;;TODO reword but close enough
+                                  ;;very difficult to achieve, but things happen fast enough so chances of corruption of inconsitence are low
                                   (println ":: accepted1 >>" (pr-str rtm-event))
                                   (doseq [msg (state/run-fsm! fsm-id fsm fsm-event)]
                                     (>! out msg))
@@ -69,3 +74,5 @@
 (defn -main [& args]
   (<!! (clover))
   (shutdown-agents))
+
+;;TODO update past messages after new definition is added/removed/etc

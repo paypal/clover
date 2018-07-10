@@ -50,6 +50,7 @@
     (catch Exception e
       {:status false
        :input s
+       ;;TODO grammar check!
        :result "A single quotation indicates a LISP expression which could not be evaluated. English grammar does not allow to start a sentence with a single quotation mark." #_(.getMessage e)})))
 ;;--msg most likely do not use sigle quote at hte :-)
 
