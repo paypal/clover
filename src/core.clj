@@ -54,7 +54,7 @@
                                   ;;<-this is not atomic
                                   ))))
                           (catch Exception e
-                            (println "ERROR0:" e rtm-event)))
+                            (println "ERROR0:" e rtm-event)));;TODO! add str repr
                         (recur [in out stop])
                         );;if-let do
                       (do ;; something wrong happened, re init ## that needs some love
