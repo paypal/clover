@@ -6,6 +6,7 @@
   ".
 *following forms are supported:*
 `!help` - for help
+                       ;;FIXME
 `!explain <term>` or `?<term>` - explain _term_
 `!define <term> = <description>` or `?<term> = <description>` - define _term_ as _description_
 `'<LISP expression>` - evaluate expression using Clojure dialect e.g. `'(+ 1 2)` or `'(filter odd? [1 2 3])`
@@ -19,29 +20,40 @@
 
 (defn format-mod-not-found[user-name user-real-name args] (str "User:" " " user-real-name " " "(`" user-name "`)" " " "cannot find definition for term: " "_" (:term args) "_. Please advise user directly (it will be automated soon)."))
 
+
+(defn format-metag[metag]
+  (when-not (empty? metag)
+    (str "_applying metags_:" (s/join "," metag) "\n")))
+
 (defn format-mod-new-definition[user-name user-real-name args] (str "User:" " " user-real-name " " "(`" user-name "`)" " " "defined term: " "_" (:term args) "_ as:" "`" (:definition args) "`. This is for information only. In future there will be option to vet the definition." ))
 
-(defn format-thx[term] (str "Thx for defining term _" term "_ (full editing/deletion is not supported yet, changes always results in new definition, type `!help` for more info.)"))
+(defn format-thx[term metag] (str (format-metag metag) "Thx for defining term _" term "_ (full editing/deletion is not supported yet, changes always results in new definition, type `!help` for more info.)"))
 
 (defn format-not-found[term] (str "term _" term "_ is not registered (search is case insensitive but the database preserves it), @clover will try to find the definition for you or type `!help` for more options."))
 
-(defn format-lookup[t d]
-  (if (next d)
-    (s/join "\n" (cons "*multiple definitions exist:*" (map-indexed #(str (inc %1) " - " %2) d)))
-    (first d)))
+(defn format-lookup[t d metag]
+  (str (format-metag metag)
+       (if (next d)
+         (s/join "\n" (cons "*multiple definitions exist:*" (map-indexed #(str (inc %1) " - " %2) d)))
+         (first d))))
 
 (def read-clover-lang (insta/parser
     "clover-sentence = eval / define / explain / help / noop
      help = '!help'
-     define = ('?' | '!define') break term break '=' break #'.+'
-     explain = ('?' | '!explain') break term break
+     define = metags ('?' | '!define') break term break '=' break #'.+'
+     explain = metags ('?' | '!explain') break term break
      term = word space term | word
      space = #'\\s+'
      word = #'[a-zA-Z0-9&-/]+'
+     metags = {metag (',' | break)}
+     metag = word
      eval = #'[\\'\u2018]' catchall
      noop = catchall
      break = #'\\s*'
      catchall = #'([\\s\\S])*'"))
+
+(defn- extract-metags [s]
+  (->> s rest (filter (comp (partial = :metag) first)) (map second) set))
 
 (def eval-stage
   (partial insta/transform {
@@ -50,8 +62,8 @@
                             :word identity
                             :space (fn [_] " ")
                             :term str
-                            :define (fn [_ _ term _ _ _ definition] {:command :define :args {:term term :definition definition}})
-                            :explain (fn [_ _ term _] {:command :explain :args {:term term}})
+                            :define (fn [metags2 _ _ term _ _ _ definition] {:metag (extract-metags metags2) :command :define :args {:term term :definition definition}})
+                            :explain (fn [metags2 _ _ term _] {:metag (extract-metags metags2) :command :explain :args {:term term}})
                             :catchall identity
                             :eval (fn [_ expression] {:command :evaluate :args {:expression expression}})
                             :noop (fn [_] {:command :none :args nil})

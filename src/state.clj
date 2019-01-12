@@ -22,7 +22,7 @@
   (let [t (-> parsed-event :args :term)
         l (db/lookup t)]
     (if l
-      {:c-text (lang/format-lookup t l)}
+      {:c-text (lang/format-lookup t l (-> parsed-event :metag))}
       {:c-disposition :c-not-found
        :c-text (lang/format-not-found t)})))
 
@@ -36,7 +36,7 @@
   (persist/store parsed-event)
   (db/teach (-> parsed-event :args :term) (:definition (-> parsed-event :args) parsed-event))
   {:c-disposition :c-new-definition
-   :c-text (lang/format-thx (-> parsed-event :args :term))})
+   :c-text (lang/format-thx (-> parsed-event :args :term) (-> parsed-event :metag))})
 
 (defmethod eval-parsed-event! :none [parsed-event]
   {:c-text "_it seems that you changed your mind or made a typo so this is not clover request any more, this will disappear when you delete your original request_"})
