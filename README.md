@@ -53,6 +53,7 @@ clover > thx for defining term ETA
 
 
 ## definitions (BNF+Clojure regex)
+FIXME
 
 ```
 clover-sentence ::= eval | define | explain | help
