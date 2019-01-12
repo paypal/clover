@@ -37,11 +37,13 @@
          (s/join "\n" (cons "*multiple definitions exist:*" (map-indexed #(str (inc %1) " - " %2) d)))
          (first d))))
 
+;;TODO verify syntax collisions
 (def read-clover-lang (insta/parser
     "clover-sentence = eval / define / explain / help / noop
      help = '!help'
      define = metags ('?' | '!define') break term break '=' break #'.+'
      explain = metags ('?' | '!explain') break term break
+     research = metags ('??' | '!research') break term break
      term = word space term | word
      space = #'\\s+'
      word = #'[a-zA-Z0-9&-/]+'
@@ -64,6 +66,7 @@
                             :term str
                             :define (fn [metags2 _ _ term _ _ _ definition] {:metag (extract-metags metags2) :command :define :args {:term term :definition definition}})
                             :explain (fn [metags2 _ _ term _] {:metag (extract-metags metags2) :command :explain :args {:term term}})
+                            :reseach (fn [metags2 _ _ term _] {:metag (extract-metags metags2) :command :research :args {:query term}})
                             :catchall identity
                             :eval (fn [_ expression] {:command :evaluate :args {:expression expression}})
                             :noop (fn [_] {:command :none :args nil})

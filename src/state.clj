@@ -26,6 +26,11 @@
       {:c-disposition :c-not-found
        :c-text (lang/format-not-found t)})))
 
+(defmethod eval-parsed-event! :research [parsed-event]
+  (let [t (-> parsed-event :args :query)]
+    {:c-text (lang/format-explain t "WIP" (-> parsed-event :metag))}
+    ))
+
 (defmethod eval-parsed-event! :help [parsed-event]
   {:c-text lang/format-help})
 
