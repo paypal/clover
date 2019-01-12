@@ -11,7 +11,7 @@
 (defn- build-response[args fsm-resp evaled-event fsm-id fsm-event]
   (let [rtm-event (:rtm-event fsm-event)
         full-resp (concat [fsm-resp]
-                          (when (:c-disposition evaled-event)
+                          nil #_(when (:c-disposition evaled-event)
                             [{:c-dispatch :c-post
                               :c-team (:team fsm-id)
                               :c-channel (:mod-channel config/config)
