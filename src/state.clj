@@ -128,8 +128,9 @@
 ;;
 ;;
 (defn restore[]
-  (println ":: replaying legacy history:")
-  (persist/replay-legacy-1)
-  (println ":: replaying history:")
+;; todo - make a one call, refactor r-l-1
+;;  (println ":: replaying legacy history:")
+;;  (persist/replay-legacy-1)
+;;  (println ":: replaying history:")
   (persist/replay-2)
   (println ":: starting with config:" config/config))
