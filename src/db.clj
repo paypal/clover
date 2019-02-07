@@ -29,7 +29,13 @@
 
 (def dic (atom {}))
 
-(defn teach [term definition]
+
+
+
+                            
+
+
+(defn teach [args]
   (swap! dic update (s/lower-case term) #(conj % definition)))
 
 (defn split-lowercase-etc[s] (->> (s/split s #"[^A-Za-z0-9]") (remove empty?) (map s/lower-case) set))

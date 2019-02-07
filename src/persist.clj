@@ -33,8 +33,7 @@
 
 (defn- replaying-2 [e]
   (println "replaying:" e)
-  (let [{:keys [term definition]} (-> e :entry :args)]
-    (db/teach term definition)))
+  (db/teach (-> e :entry :args)))
 
 (defn- replay[l f]
   (let [e (->> l slurp s/split-lines (map e/read-string) (remove nil?))]
