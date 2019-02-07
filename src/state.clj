@@ -39,7 +39,7 @@
 
 (defmethod eval-parsed-event! :define [parsed-event]
   (persist/store parsed-event)
-  (db/teach (-> parsed-event :args :term) (:definition (-> parsed-event :args) parsed-event))
+  (db/teach (-> parsed-event :args :term) (:definition (-> parsed-event :args)))
   {:c-disposition :c-new-definition
    :c-text (lang/format-thx (-> parsed-event :args :term) (-> parsed-event :metag))})
 
