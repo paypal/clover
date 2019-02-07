@@ -15,6 +15,7 @@
        s/split-lines
        (map #(s/split % #"\t" -1))))
 
+;;TODO move to persist
 (def default-dic
   (->> config/config
        :db
@@ -26,7 +27,7 @@
        (group-by (comp s/lower-case first))
        (fmap #(->> % (map last) distinct))))
 
-(def dic (atom default-dic))
+(def dic (atom {}))
 
 (defn teach [term definition]
   (swap! dic update (s/lower-case term) #(conj % definition)))
