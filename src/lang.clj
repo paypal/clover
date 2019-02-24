@@ -32,7 +32,7 @@
 (defn format-not-found[term] (str "term _" term "_ is not registered (search is case insensitive but the database preserves it), @clover will try to find the definition for you or type `!help` for more options."))
 
 ;;TODO rename to explain
-(defn format-lookup[t d metag]
+(defn format-explain[t d metag]
   (str (format-metag metag)
        (if (next d)
          (s/join "\n" (cons "*multiple definitions exist:*" (map-indexed #(str (inc %1) " - " %2) d)))
