@@ -32,11 +32,14 @@
 
 
 
-                            
+
+;;{"term1" "def1" "term2" "def2"}
+;;{"term1"  <#{metags}  #{defs}  #{authors fixit} >}
 
 
 (defn teach [args]
-  (swap! dic update (s/lower-case term) #(conj % definition)))
+  (let [{:keys [term definition]} args]
+    (swap! dic update (s/lower-case term) #(conj % definition))))
 
 (defn split-lowercase-etc[s] (->> (s/split s #"[^A-Za-z0-9]") (remove empty?) (map s/lower-case) set))
 

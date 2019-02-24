@@ -25,6 +25,8 @@
 
 (def log-response (partial append-to response-file))
 
+
+;;TODO replace . with = in log1 file
 (defn- replaying-legacy-1 [e]
   (println "replaying legacy:" e)
   (let [{{:keys [term definition]} :args} (lang/parse (-> e :entry :input))]

@@ -22,7 +22,7 @@
   (let [t (-> parsed-event :args :term)
         l (db/lookup t)]
     (if l
-      {:c-text (lang/format-lookup t l (-> parsed-event :metag))}
+      {:c-text (lang/format-explain t l (-> parsed-event :metag))}
       {:c-disposition :c-not-found
        :c-text (lang/format-not-found t)})))
 
@@ -39,7 +39,7 @@
 
 (defmethod eval-parsed-event! :define [parsed-event]
   (persist/store parsed-event)
-  (db/teach (-> parsed-event :args :term) (:definition (-> parsed-event :args)))
+  (db/teach (parsed-event :args))
   {:c-disposition :c-new-definition
    :c-text (lang/format-thx (-> parsed-event :args :term) (-> parsed-event :metag))})
 
