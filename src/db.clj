@@ -42,6 +42,8 @@
 ;;TODO Reword “_it seems that you changed your mind or made a typo so this is not clover request any more, this will disappear when you delete your original request_ (edited)” -> message perhaps
 ;;TODO Clover - make it disappear after a while "_it seems that you changed your mind or made a typo so this is not clover request any more, this will disappear when you delete your original request_ (edited)"
 ;;TODO CLOVER !explain -> ping user ->? Clover
+;;TODO https://api.slack.com/docs/message-threading
+
 ;;{"term1" "def1" "term2" "def2"}
 ;;{"term1"  <#{metags}  #{defs}  #{authors fixit} >}
 
