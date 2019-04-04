@@ -1,5 +1,5 @@
 (defproject CLOVER "0.8.1"
-  :description "CLOVER - "
+  :description "CLOVER - a clever clojure bot framework"
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/core.async "0.2.374"]
