@@ -27,7 +27,7 @@
 (defn make-comm* [& args] (p/retry {} (p/retriable {:catch [Exception] :ex-wrapper ex-wrapper} (apply make-comm args))))
 
 (defn send-message [c t]
-  (Thread/sleep 2000);;TODO use lower prio #
+  (Thread/sleep 2000);;TODO use lower prio #,not needed with throttling, add separate throtling in order not to starve main channel, other cases
   (>!! (second @comms) {:c-dispatch :c-post :c-channel c :c-text t} ))
 
 ;;TODO remove older inquires after timeout
