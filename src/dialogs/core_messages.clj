@@ -1,6 +1,7 @@
 (ns dialogs.core-messages
   (:require
    [clojure.java.io :as io]
+   [clojure.string :as s]
    db
    lang
    evaluator
@@ -28,6 +29,16 @@
       {:c-text (lang/format-lookup t l)}
       {:c-disposition :c-not-found
        :c-text (lang/format-not-found t)})))
+
+(defmethod eval-parsed-event! :research [parsed-event]
+  (let [t (-> parsed-event :args :topic)]
+    (if (re-find #"(?i)luck" t)
+      {:c-text (str ".\nYour lucky numbers are:" (s/join " " (take 6 (repeatedly #(+ 10 (rand-int 90)))))  "!")}
+      {:c-text ".\nHi, I will ask around for that information and connect you with experts in a separate DM, please :whole-day:"
+       :c-create-fsm-for (-> parsed-event :args)
+       }
+      )
+    )) ;;TODO! add name, personalize
 
 (defmethod eval-parsed-event! :help [parsed-event]
   {:c-text lang/format-help})
