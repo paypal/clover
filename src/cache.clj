@@ -9,8 +9,8 @@
       (c/ttl-cache-factory  :ttl 60000)
       atom))
 
-(defn cache-fsm! [cache fsm-key fsm]
-  (swap! cache c/miss fsm-key fsm)
+(defn cache-fsm! [cache fsm-id fsm]
+  (swap! cache c/miss fsm-id fsm)
   fsm)
 
 (defn through!* [value-fn cache item]
