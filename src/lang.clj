@@ -8,10 +8,11 @@
 `!help` - for help
 `!explain <term>` or `?<term>` - explain _term_
 `!define <term> = <description>` or `?<term> = <description>` - define _term_ as _description_
+`!research <topic>` or `???<topic>` - automaticly finds an expert for topic  _topic_
 `'<LISP expression>` - evaluate expression using Clojure dialect e.g. `'(+ 1 2)` or `'(filter odd? [1 2 3])`
 
 *interacting with clover:*
- - deleting initial request results in hiding response, convenient in larger channels (all definitions stay, duplicates are removed)
+ - deleting initial request results in hiding response, convenient in larger channels (all definitions stay, duplicates are removed, started research stays)
  - editing inital request is equal to deletion and posting new one while previous response is replaced
 
  - all new and missing definitions will receive human attention at #clover-mod (feel free to join and help)
@@ -31,11 +32,13 @@
     (first d)))
 
 (def read-clover-lang (insta/parser
-    "clover-sentence = eval / define / explain / help / noop
+    "clover-sentence = eval / explain / define / research / help / noop
      help = '!help'
      define = ('?' | '!define') break term break '=' break #'.+'
      explain = ('?' | '!explain') break term break
+     research = ('???' | '!research') break topic break
      term = word space term | word
+     topic = word space topic | word
      space = #'\\s+'
      word = #'[a-zA-Z0-9&-/]+'
      eval = #'[\\'\u2018]' catchall
@@ -50,8 +53,10 @@
                             :word identity
                             :space (fn [_] " ")
                             :term str
+                            :topic str
                             :define (fn [_ _ term _ _ _ definition] {:command :define :args {:term term :definition definition}})
                             :explain (fn [_ _ term _] {:command :explain :args {:term term}})
+                            :research (fn [_ _ topic _] {:command :research :args {:topic topic}})
                             :catchall identity
                             :eval (fn [_ expression] {:command :evaluate :args {:expression expression}})
                             :noop (fn [_] {:command :none :args nil})

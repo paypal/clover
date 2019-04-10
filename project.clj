@@ -1,4 +1,4 @@
-(defproject CLOVER "0.8.0"
+(defproject CLOVER "0.9.0"
   :description "CLOVER - "
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.8.0"]

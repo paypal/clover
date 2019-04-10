@@ -2,11 +2,12 @@
   (:require
    [clojure.core.async :as async :refer [>! >!! <! <!! go go-loop]]
    [perseverance.core :as p]
+   slack-rtm
    dialogs.core
+   dialogs.research
    fsm
    config
    util
-   slack-rtm
    cache)
   (:import java.lang.Thread)
   (:gen-class))
@@ -36,7 +37,9 @@
 
 (defn process-find-and-run[fsmf slack-unique-id process-slack-message! dialog-cache rtm-event]
   (let [fsm-id (slack-unique-id rtm-event)]
+    (prn "AAAAA" fsm-id)
     (when-let [[create? fsm-name fsm-event] (process-slack-message! fsm-id rtm-event)]
+      (prn "BBBBB" create? fsm-name fsm-event)
       (let [fsm (fsm/find-fsm! dialog-cache fsmf fsm-id)
             _ (prn "===RUN===" fsm-id fsm-name fsm-event fsm)]
         (when-let [fsm (if fsm
@@ -45,7 +48,9 @@
                            (fsm/create-fsm! dialog-cache fsmf fsm-id)))]
           [fsm fsm-name fsm-id fsm-event])))))
 
-(def fsms [(apply partial process-find-and-run dialogs.core/definition)])
+(def fsms [(apply partial process-find-and-run dialogs.core/definition)
+           (apply partial process-find-and-run dialogs.research/definition)
+           (apply partial process-find-and-run dialogs.research/definition2)])
 
 (defn -main [& args]
   (fsm/restore)

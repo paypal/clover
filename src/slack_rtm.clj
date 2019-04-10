@@ -62,6 +62,11 @@
 
 (def buf-size (* 8 1024))
 
+
+;;TODO handle errors here everywhere
+(defn chat-postMessage [api-token channel text]
+  (:message (run-api-get api-token "chat.postMessage" {:channel channel :text text})))
+
 (defn chat-update [api-token ts channel text]
   (run-api-get api-token "chat.update" {:ts ts :channel channel :text text}))
 
@@ -74,6 +79,14 @@
 (defn chat-upload [api-token channels file-name file-content]
   (run-api-post api-token "files.upload" {:channels (s/join "," channels) :filename file-name} file-content))
 
+(defn mpim-open [api-token users];;TODO remove this after more testing, in fact also migrate everything else to conversation API
+  (:id (:group (run-api-get api-token "mpim.open" {:users (s/join "," users)}))))
+
+(defn conversation-open [api-token users]
+  (:id (:channel (run-api-get api-token "conversations.open" {:users (s/join "," users)}))))
+
+(defn im-open [api-token user]
+  (:id (:channel (run-api-get api-token "im.open" {:user user}))))
 
 (defn connect-socket [url throttle-params]
   (let [in (async/chan)
@@ -97,8 +110,8 @@
                  )]
     (go-loop []
       (let [[ts m] (async/<! tout)
-            _ (println ":: outcomming >>>>" (pr-str m))
             delay (- (System/currentTimeMillis) ts)
+            _ (println ":: outcomming >>>>" (pr-str m));;TODO add delay
             sorry-prefix (when (> delay 2999) (println "WARNING: message rate throttling kicked in:" delay) "_Sorry for the delay, clover has been unusually busy_\n")
             s (generate-string (update-in m [:text] (partial str sorry-prefix)))]
         (ws/send-msg socket s)
@@ -176,11 +189,12 @@
                           (async/>! out [(System/currentTimeMillis) m2]))
                 :c-update (chat-update api-token (:c-ts v) (:c-channel v) (:c-text v))
                 :c-delete (chat-delete api-token (:c-ts v) (:c-channel v))
+                :c-send-back (async/>! cin (dissoc v :c-dispatch))
                 nil)
 
               (when-let[vv (fix-input-accepted? team-id (partial add-user-info users-map) v)]
                 (let [rto (vv :reply_to)
-                      #_(println ":: incomming <<<<:" (pr-str v))]
+                      _ (println "XXXXXXxx123:: incomming <<<<:" (pr-str v))]
                   (if-not rto
                     (if-not (self-send vv)
                       (async/>! cin vv)
