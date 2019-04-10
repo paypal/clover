@@ -2,7 +2,8 @@
   (:require
    [clojure.core.async :as async :refer [>! >!! <! <!! go go-loop]]
    [perseverance.core :as p]
-   state
+   dialogs.core
+   fsm
    config
    util
    slack-rtm
@@ -33,21 +34,21 @@
 (defn broadcast [t]
   (doall (map #(send-message % t) (slack-rtm/member-of (:api-token config/config)))))
 
-(defn process-find-and-run[slack-unique-id process-slack-message! dialog-cache rtm-event]
+(defn process-find-and-run[fsmf slack-unique-id process-slack-message! dialog-cache rtm-event]
   (let [fsm-id (slack-unique-id rtm-event)]
     (when-let [[create? fsm-name fsm-event] (process-slack-message! fsm-id rtm-event)]
-      (let [fsm (state/find-fsm! dialog-cache fsm-id)
+      (let [fsm (fsm/find-fsm! dialog-cache fsmf fsm-id)
             _ (prn "===RUN===" fsm-id fsm-name fsm-event fsm)]
         (when-let [fsm (if fsm
                          fsm
                          (if create?
-                           (state/create-fsm! fsm-name dialog-cache fsm-id)))]
+                           (fsm/create-fsm! dialog-cache fsmf fsm-id)))]
           [fsm fsm-name fsm-id fsm-event])))))
 
-(def fsms [(partial process-find-and-run state/slack-unique-id state/process-slack-message!)])
+(def fsms [(apply partial process-find-and-run dialogs.core/definition)])
 
 (defn -main [& args]
-  (state/restore)
+  (fsm/restore)
   (let [dialog-cache (cache/mk-fsm-cache)
         main-loop (go-loop [[in out stop] (make-comm)]
                     (if-let [rtm-event (<! in)]
@@ -56,7 +57,7 @@
                           (when-let [[fsm fsm-name fsm-id fsm-event] (some #(% dialog-cache rtm-event) fsms)]
                             (println ":: accepted1 >>" (pr-str fsm-name rtm-event))
                             ;;TODO! add protection against resending same action in case FSM did not accept event
-                            (doseq [msg (state/run-fsm! fsm-name fsm-id fsm fsm-event)]
+                            (doseq [msg (fsm/run-fsm! fsm-name fsm-id fsm fsm-event)]
                               (>! out msg)))
                           (catch Exception e
                             (println "ERROR0:" e rtm-event)));;<-this is not atomic ;;TODO! add str repr                        

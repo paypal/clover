@@ -1,23 +1,6 @@
-(ns dialogs
-  (:require [reduce-fsm :as fsm]
-            config
-            lang
-            persist)
-  (:import java.lang.Thread))
-
-
-(def user-format-mod-m {:c-new-definition lang/format-mod-new-definition :c-not-found lang/format-mod-not-found})
-
-(defn- build-response[args fsm-resp evaled-event fsm-id fsm-event]
-  (let [rtm-event (:rtm-event fsm-event)
-        full-resp (concat [fsm-resp]
-                          (when (:c-disposition evaled-event)
-                            [{:c-dispatch :c-post
-                              :c-team (:team fsm-id)
-                              :c-channel (:mod-channel config/config)
-                              :c-text (((:c-disposition evaled-event) user-format-mod-m) (:name rtm-event) (:real_name rtm-event) args)}]))]
-    (persist/log-response [fsm-id args rtm-event evaled-event full-resp])
-    full-resp))
+(ns dialogs.core-actions
+  (:require [reduce-fsm :as fsm])
+  (:use dialogs.common))
 
 (defn- find-initial-ts-channel[acc]
   (let [rtm-event (->> acc (map :c-event) (filter :ack) first :rtm-event)]
@@ -42,7 +25,8 @@
 (defn- action-ignore [acc fsm-event from-state to-state]
   (conj acc {:c-event fsm-event :c-actions nil}))
 
-(fsm/defsm-inc sm-core
+;; trade-off requiring a lower level library vs. issues with decoupling macro from data
+(fsm/defsm-inc fsm-core
   [
    [:ready {:is-terminal false}
     {:command command :args args :c-evaled-event evaled-event :c-fsm-id fsm-id} -> {:action (partial action-new command args evaled-event fsm-id)} :ack-wait
@@ -58,9 +42,3 @@
     ]
    ]
   )
-
-(def fsm-m {:sm-core sm-core})
-(defn gt-sm[fsm-name] (fsm-m fsm-name))
-(defn mk-sm[fsm-name] (atom ((gt-sm fsm-name) [])))
-
-(defn run-fsm![c-fsm c-event] (swap! c-fsm fsm/fsm-event c-event))

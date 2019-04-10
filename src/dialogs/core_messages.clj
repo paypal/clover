@@ -1,13 +1,16 @@
-(ns state
+(ns dialogs.core-messages
   (:require
-   [clojure.core.cache :as ca]
    [clojure.java.io :as io]
-   dialogs
    db
    lang
    evaluator
-   persist
-   cache))
+   persist)
+  (:use dialogs.common))
+
+;;
+;;
+;;
+(def fsm-name-version :core-0.9.0)
 
 ;;
 ;;
@@ -46,7 +49,6 @@
 ;;
 ;;
 
-(defn- slack-unique-id-selector [rtm-event] (mapv rtm-event [:type :subtype]))
 (defmulti slack-unique-id slack-unique-id-selector)
 
 (defmethod slack-unique-id ["message" nil] [rtm-event]
@@ -72,12 +74,12 @@
     (when-not (= :none (:command parsed))
         (let [parsed-event (assoc parsed :rtm-event rtm-event)]
           [true
-           :sm-core
+           fsm-name-version
            (assoc parsed-event :c-evaled-event (eval-parsed-event! parsed-event) :c-fsm-id fsm-id)]))))
 
 (defmethod process-slack-message! ["message" "message_sent"] [fsm-id rtm-event]
   [false
-   :sm-core
+   fsm-name-version
    (assoc {:ack :ok} :rtm-event rtm-event :c-fsm-id fsm-id)])
 
 (defmethod process-slack-message! ["message" "message_changed"] [fsm-id rtm-event]
@@ -85,53 +87,12 @@
     (when-let [parsed (lang/parse (:text message))]
       (let [parsed-event (assoc parsed :rtm-event rtm-event)]
         [(not= :none (:command parsed))
-         :sm-core
+         fsm-name-version
          (assoc parsed-event :c-evaled-event (eval-parsed-event! parsed-event) :c-fsm-id fsm-id)]))))
 
 (defmethod process-slack-message! ["message" "message_deleted"] [fsm-id rtm-event]
   [false
-   :sm-core
+   fsm-name-version
    {:command :delete :rtm-event rtm-event :c-fsm-id fsm-id}])
 
 (defmethod process-slack-message! :default [fsm-id rtm-event] nil)
-
-;;
-;;
-;;
-(def fsm-dir (str (:db config/config) "/dialogs/"))
-
-(defn- fsm-file [fsm-key] (io/as-file (str fsm-dir (:ts fsm-key) "-" (:team fsm-key) "-" (:user fsm-key))))
-
-(defn- save-fsm [fsm-name fsm-key c-fsm]
-  (let [fsm-file (fsm-file fsm-key)
-        content (with-out-str (pr [fsm-name (:state @c-fsm) (:value @c-fsm)]))]
-    (spit fsm-file content)))
-
-(defn- load-fsm [fsm-key]
-  (let [fsm-file (fsm-file fsm-key)]
-    (when (.exists fsm-file)
-      (let [data (read-string (slurp fsm-file))
-            fsm-name (first data)
-            fsm-data (rest data)]
-        (atom (apply (dialogs/gt-sm fsm-name) fsm-data))))))
-
-(defn run-fsm![fsm-name fsm-id fsm fsm-event]
-  (println ":: accepted2 >>" (pr-str fsm-id) "-for->" (pr-str fsm-event))
-  (dialogs/run-fsm! fsm fsm-event)
-  (save-fsm fsm-name fsm-id fsm)
-  (println ":: after:" (pr-str @fsm) " -with- " (pr-str (-> @fsm :value last)))
-  (-> @fsm :value last :c-actions))
-
-(defn create-fsm! [fsm-name cache fsm-key] (cache/cache-fsm! cache fsm-key (dialogs/mk-sm fsm-name)))
-
-(def find-fsm! (partial cache/through!* load-fsm)) ;;takes [cache fsm-key]
-
-;;
-;;
-;;
-(defn restore[]
-  (println ":: replaying legacy history:")
-  (persist/replay-legacy-1)
-  (println ":: replaying history:")
-  (persist/replay-2)
-  (println ":: starting with config:" config/config))
