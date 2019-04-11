@@ -170,9 +170,10 @@
                              m (assoc payload :id nid :type "message")]
                          (swap! ack-map assoc nid {:c-context context :c-payload m})
                          (async/>! out [(System/currentTimeMillis) m]))
-                :c-post (let [nid (next-id) ;;
-                                m {:id nid :type "message" :channel (:c-channel v) :text (:c-text v)}]
-                            (async/>! out [(System/currentTimeMillis) m]))
+                :c-post (let [nid (next-id)
+                              m1 {:id nid :type "message" :channel (:c-channel v) :text (:c-text v)}
+                              m2 (if (nil? (:c-thread_ts v)) m1 (assoc m1 :thread_ts (:c-thread_ts v)))]
+                          (async/>! out [(System/currentTimeMillis) m2]))
                 :c-update (chat-update api-token (:c-ts v) (:c-channel v) (:c-text v))
                 :c-delete (chat-delete api-token (:c-ts v) (:c-channel v))
                 nil)
