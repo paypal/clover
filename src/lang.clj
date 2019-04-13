@@ -6,8 +6,6 @@
   ".
 *following forms are supported:*
 `!help` - for help
-`!explain <term>` or `?<term>` - explain _term_
-`!define <term> = <description>` or `?<term> = <description>` - define _term_ as _description_
 `!research <topic>` or `???<topic>` - automaticly finds an expert for topic  _topic_
 `'<LISP expression>` - evaluate expression using Clojure dialect e.g. `'(+ 1 2)` or `'(filter odd? [1 2 3])`
 
@@ -32,7 +30,7 @@
     (first d)))
 
 (def read-clover-lang (insta/parser
-    "clover-sentence = eval / explain / define / research / help / noop
+    "clover-sentence = eval / research / help / noop
      help = '!help'
      define = ('?' | '!define') break term break '=' break #'.+'
      explain = ('?' | '!explain') break term break
