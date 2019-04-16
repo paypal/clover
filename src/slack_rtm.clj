@@ -65,7 +65,7 @@
 
 ;;TODO handle errors here everywhere
 (defn chat-postMessage [api-token channel text]
-  (:message (run-api-get api-token "chat.postMessage" {:channel channel :text text})))
+  (:message (run-api-get api-token "chat.postMessage" {:channel channel :text text}))) ;;IMPORTANT add ":as_user true"
 
 (defn chat-update [api-token ts channel text]
   (run-api-get api-token "chat.update" {:ts ts :channel channel :text text}))

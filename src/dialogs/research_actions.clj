@@ -78,8 +78,8 @@
 
 
 (defn- loop? [[state event]]
-  (< 2 (-> state first :c-event :rtm-event :c-help-chain count));;for local testing only
-  #_(some #(= % (-> event :resp)) (-> state first :c-event :rtm-event :c-help-chain)))
+  #_(< 2 (-> state first :c-event :rtm-event :c-help-chain count));;for local testing only
+  (some #(= % (-> event :resp)) (-> state first :c-event :rtm-event :c-help-chain)))
 
 (defn- show-transition [[state event]]
   (prn "STATE:" state)
