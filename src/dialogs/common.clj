@@ -24,6 +24,7 @@
 `1` when you would like to help
 ~`2` hmm, may be not~ : _it is *not an option* at PayPal, is it? WIP though_
 `3 @name` when you know somebody who might know the answer (name is slack user name)
+In case you are confused with this post, please consult with #clover-dev.
 ")
         dm (if (.startsWith to "U") (slack-rtm/im-open (:api-token config/config) to) to) ;;TODO optimially we should use RTM
         post-msg (slack-rtm/chat-postMessage (:api-token config/config) dm msg)
