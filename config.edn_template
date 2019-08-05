@@ -5,4 +5,14 @@
  :db "db"
  :team-id "T<config>"
  :mod-channel "C<config>"
+ ;;echo -n 'login:password' | openssl base64 | sed -e 's/^/Basic /' | tr -d '\n' | shasum
+ :hashed-passwords #{"<sha1> <sha1>"}
+ :sso2 {:app-name "<app-name>"
+       :base-uri "http://127.0.0.1:3000"
+       :idp-uri "https://<rest-of-uri>"
+       :idp-cert "<cert base64>"
+       :keystore-file "<filename>.jks"
+       :keystore-password "<password>"
+       :key-alias "<alias>"
+        }
 }

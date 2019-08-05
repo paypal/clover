@@ -33,7 +33,7 @@
 (defn broadcast [t]
   (doall (map #(send-message % t) (slack-rtm/member-of (:api-token config/config)))))
 
-(defn -main [& args]
+(defn clover[]
   (state/restore)
   (let [dialog-cache (cache/mk-fsm-cache)
         main-loop (go-loop [[in out stop] (make-comm)]
@@ -64,7 +64,8 @@
                         (recur (make-comm*))
                         );;if-let do else
                       ))]
-    (<!! main-loop)
-    (shutdown-agents)
-    )
-  )
+    main-loop))
+
+(defn -main [& args]
+  (<!! (clover))
+  (shutdown-agents))
