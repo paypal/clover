@@ -1,4 +1,4 @@
-(defproject CLOVER "0.8.0"
+(defproject CLOVER "0.8.1"
   :description "CLOVER - "
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.8.0"]
@@ -7,18 +7,16 @@
                  [org.clojure/algo.generic "0.1.2"]
                  [org.clojure/math.combinatorics "0.1.1"]
                  [com.grammarly/perseverance "0.1.2"]
-                 [compojure "1.4.0"]
                  [clojail "1.0.6"]
-                 [clj-http "2.1.0"]
-                 [cheshire "5.5.0"]
-                 [environ "1.0.2"]
-                 [stylefruits/gniazdo "1.0.1"]
-                 [ring/ring-defaults "0.1.5"]
+                 [clj-http "2.3.0"]
+                 [cheshire "5.9.0"]
+                 [environ "1.1.0"]
+                 [stylefruits/gniazdo "1.1.1"]
                  [throttler "1.0.0"]
-                 [http-kit "2.1.19"]
-                 [instaparse "1.4.2"]
+                 [http-kit "2.3.0"]
+                 [instaparse "1.4.10"]
                  [reduce-fsm "0.1.4"]
-                 [org.clojure/core.cache "0.6.5"]
+                 [org.clojure/core.cache "0.7.2"]
                  ]
   :plugins [[lein-ring "0.8.13"]]
   :uberjar-name "CLOVER.jar"
