@@ -1,0 +1,10 @@
+#!/bin/bash
+cd ${0%/*}
+echo START `date`
+while :
+do
+	echo DO `date`
+	CONFIG_FILE=config.edn nohup java -Djava.security.manager -Djava.security.policy==java.policy -Dclojure.server.repl="{:port 4444 :accept clojure.core.server/repl}" -jar target/CLOVER.jar >& logs/out.`date +"%y-%m-%d:%H:%M"`
+        sleep 6
+	echo DONE `date`
+done

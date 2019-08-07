@@ -8,7 +8,9 @@
             [saml20-clj.routes :as sr]
             [ring.middleware.session :refer :all]
             [ring.middleware.params :refer :all]
-            [digest :as d]))
+            [digest :as d]
+            config
+            slack-rtm))
 
 
 ;; In ring middleware, "The root cause here is that in Compojure, the routing tree is an application where the middleware are applied in-place - there is no good way to delay the computation to see if the route will eventually match.", hence manual check. `reroute-middleware` might work better.
@@ -45,8 +47,24 @@
     (when sso-config (sr/saml-routes sso-config))
 
     (context "/api" []
-      :tags ["api"]
-      )))
+             :tags ["api"]
+             (GET "/nuke" {session :session}
+                  :tags [:system]
+                  :return {:comment String s/Keyword s/Any}
+                  :summary "nuke clover, hopefully the driving scripts will restart it"
+                  (do
+                    (when sso-config
+                      (let [a (->> session :saml :assertions first :attrs)
+                            msg (format "Hey! %s from %s (as %s) nuked clover, it should restart soon. Don't panic, stay calm!"
+                                        (-> "displayName" a first)
+                                        (-> "department" a first)
+                                        (-> "title" a first))]
+                        (slack-rtm/run-api-get (:api-token config/config) "chat.postMessage" {:channel (:dev-channel config/config) :text msg})))
+                    (future (Thread/sleep 1000)
+                            (System/exit 0))
+                    (ok {:comment "the system will shut down momentarily"}))
+                  )
+             )))
 
 (def app
   (->> (handler (-> co/config :sso))
