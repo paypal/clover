@@ -9,6 +9,7 @@
             [ring.middleware.session :refer :all]
             [ring.middleware.params :refer :all]
             [digest :as d]
+            db
             config
             slack-rtm))
 
@@ -28,7 +29,7 @@
           sso-and-basic-auth-fn #(if (-> request :session :saml nil?) (sr/redirect-to-saml "/") (basic-auth-fn))
           sso-or-sso-and-basic-auth-fn #(if (nil? sso-config) (basic-auth-fn) (sso-and-basic-auth-fn))]
       (cond
-        ;;(str/starts-with? uri "/api/<specific-api>") (sso-or-nop-fn)
+        (str/starts-with? uri "/api/lookup") (sso-or-nop-fn)
         (str/starts-with? uri "/saml") (nop-fn)
         (str/starts-with? uri "/api") (sso-or-sso-and-basic-auth-fn)
         :else (sso-or-nop-fn)))))
@@ -48,6 +49,11 @@
 
     (context "/api" []
              :tags ["api"]
+             (GET "/lookup/:term" [term]
+                  :tags [:db]
+                  :return s/Any
+                  :summary "looks up clover DB, WIP"
+                  (ok (db/lookup term)))
              (GET "/nuke" {session :session}
                   :tags [:system]
                   :return {:comment String s/Keyword s/Any}
