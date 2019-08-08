@@ -62,7 +62,7 @@
 
 (def buf-size (* 8 1024))
 
-(defn chat-update [api-token ts channel text]
+(defn chat-update [api-token ts channel text];;TODO POST?? ADD postMessage
   (run-api-get api-token "chat.update" {:ts ts :channel channel :text text}))
 
 (defn chat-delete [api-token ts channel]
