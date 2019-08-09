@@ -70,6 +70,21 @@
                             (System/exit 0))
                     (ok {:comment "the system will shut down momentarily"}))
                   )
+             (GET "/test" {session :session}
+                  :tags [:system]
+                  :return {:comment String s/Keyword s/Any}
+                  :summary "test system api"
+                  (do
+                    (when sso-config
+                      (let [a (->> session :saml :assertions first :attrs)
+                            msg (format "Hey! %s from %s (as %s) : you can access system API now"
+                                        (-> "displayName" a first)
+                                        (-> "department" a first)
+                                        (-> "title" a first))]
+                        (slack-rtm/run-api-get (:api-token config/config) "chat.postMessage" {:channel (:dev-channel config/config) :text msg})))
+                    (ok {:comment "you can access system API now"}))
+                  )
+
              )))
 
 (def app
