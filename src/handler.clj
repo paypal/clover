@@ -4,7 +4,7 @@
             [schema.core :as s]
             [clojure.string :as str]
             [config :as co]
-            [ring.logger :as logger]
+            [ring.logger :as l]
             [saml20-clj.routes :as sr]
             [ring.middleware.session :refer :all]
             [ring.middleware.params :refer :all]
@@ -15,7 +15,7 @@
 
 
 ;; In ring middleware, "The root cause here is that in Compojure, the routing tree is an application where the middleware are applied in-place - there is no good way to delay the computation to see if the route will eventually match.", hence manual check. `reroute-middleware` might work better.
-(defn wrap-auth[sso-config hashed-passwords handler]
+(defn wrap-auth[handler sso-config hashed-passwords]
   (fn [request]
     (let [uri (request :uri)
           nop-fn #(handler request)
@@ -88,7 +88,7 @@
              )))
 
 (def app
-  (->> (handler (-> co/config :sso))
-       (wrap-auth (-> co/config :sso) (-> co/config :hashed-passwords))
-       wrap-session
-       logger/wrap-with-logger))
+  (-> (handler (-> co/config :sso))
+      (l/wrap-with-logger {:request-keys [:request-method :uri :server-name :session]})
+      (wrap-auth (-> co/config :sso) (-> co/config :hashed-passwords))
+      wrap-session))

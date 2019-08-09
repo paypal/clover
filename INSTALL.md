@@ -36,6 +36,8 @@ or with diagnostic repl and custom config
 CONFIG_FILE=custom_config.edn java -Djava.security.manager -Djava.security.policy==java.policy -Dclojure.server.repl="{:port 5555 :accept clojure.core.server/repl}" -jar target/CLOVER.jar
 ```
 
+Now, that logging is supported, `-Dlog4j.configuration=file:log4j.properties` can be used to point for properties file if needed.
+
 # other options
 
 There is an unresolved bug in clover where it can freeze and is not able to reestablish websocket. The "nuke" API is a work around it and allows anybody authorized to restart the bot. It works together with a following cron/ "run" script combo:
