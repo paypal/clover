@@ -35,3 +35,6 @@
              :dev {:dependencies [[javax.servlet/javax.servlet-api "3.1.0"]]
                    :plugins [[lein-ring "0.12.0"]]}}
             )
+
+
+;;TODO document issue with building custom clj-saml
