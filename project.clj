@@ -7,7 +7,7 @@
                  [org.clojure/algo.generic "0.1.2"]
                  [org.clojure/math.combinatorics "0.1.1"]
                  [metosin/compojure-api "1.1.11"]
-                 [ring-logger "0.7.7"]
+                 [ring-logger "1.0.1"]
                  [org.slf4j/slf4j-api "1.7.25"]
                  [org.slf4j/slf4j-log4j12 "1.7.25"]
                  [com.grammarly/perseverance "0.1.2"]
